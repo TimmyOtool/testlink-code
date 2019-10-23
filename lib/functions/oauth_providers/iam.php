@@ -59,7 +59,7 @@ function oauth_get_token($authCfg, $code)
 
     if (isset($userInfo->{'username'})){
       if (isset($authCfg['oauth_domain'])) {
-        $domain = substr(strrchr($userInfo->{'website'}, "@"), 1);
+        $domain = substr(strrchr($userInfo->{'email'}, "@"), 1);
         if ($domain !== $authCfg['oauth_domain']){
           $result->status['msg'] = 'User doesn\'t correspond to Oauth policy';
           $result->status['status'] = tl::ERROR;
@@ -72,7 +72,7 @@ function oauth_get_token($authCfg, $code)
     $options = new stdClass();
     $options->givenName = $userInfo->{'given_name'};
     $options->familyName = $userInfo->{'family_name'};
-    $options->user = $userInfo->{'website'};
+    $options->user = $userInfo->{'email'};
     $options->auth = 'oauth';
     $result->options = $options;
   } else {
