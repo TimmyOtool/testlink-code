@@ -34,13 +34,8 @@ function oauth_get_token($authCfg, $code)
   curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
   $result_curl = curl_exec($curl);
 
-
-
-
-	  curl_close($curl);
+  curl_close($curl);
   $tokenInfo = json_decode($result_curl, true);
-
-
 
   //If token is received start session
   if (isset($tokenInfo['access_token'])){
