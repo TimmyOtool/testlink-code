@@ -63,7 +63,6 @@ function oauth_get_token($authCfg, $code)
       $result->status['msg'] = 'User ID is empty';
       $result->status['status'] = tl::ERROR;
     }
-    print($userprofile);
     $options = new stdClass();
     $options->givenName = $userInfo->{'given_name'};
     $options->familyName = $userInfo->{'family_name'};
