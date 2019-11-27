@@ -7,7 +7,8 @@
  *
  * @filesource  doAuthorize.php
  * @package     TestLink
- * @copyright   2003-2019, TestLink community 
+ * @author      Chad Rosen, Martin Havlat,Francisco Mancardi
+ * @copyright   2003-2018, TestLink community 
  * @link        http://www.testlink.org
  *
  */
@@ -59,7 +60,7 @@ function doAuthorize(&$db,$login,$pwd,$options=null) {
     $user->login = $login;
     $searchBy = tlUser::USER_O_SEARCH_BYLOGIN;
     if( $isOauth ) {
-      $user->emailAddress = $login;
+      $user->emailAddress = $options->email;
       $searchBy = tlUser::USER_O_SEARCH_BYEMAIL;
     }
     $loginExists = ( $user->readFromDB( $db, $searchBy ) >= tl::OK ); 
@@ -111,7 +112,7 @@ function doAuthorize(&$db,$login,$pwd,$options=null) {
     if ($isOauth){
       $forceUserCreation = true;
       $user->authentication = 'OAUTH';
-      $user->emailAddress = $login;
+      $user->emailAddress = $options->email;
       $user->firstName = $options->givenName;
       $user->lastName = $options->familyName;
     
@@ -147,7 +148,7 @@ function doAuthorize(&$db,$login,$pwd,$options=null) {
     $user->login = $login;
     $searchBy = tlUser::USER_O_SEARCH_BYLOGIN;
     if( $isOauth ) {
-      $user->emailAddress = $login;
+      $user->emailAddress = $options->email;
       $user->login = null;
       $searchBy = tlUser::USER_O_SEARCH_BYEMAIL;
     }
@@ -419,7 +420,7 @@ function doSessionSetUp(&$dbHandler,&$userObj) {
 
   $ckObj = new stdClass();
   $ckObj->name = config_get('auth_cookie');
-  $ckObj->value = $userObj->getSecurityCookie();
+  $ckObj->value = $user->getSecurityCookie();
   $ckObj->expire = $expireOnBrowserClose = false;
   tlSetCookie($ckObj);
 

@@ -51,7 +51,6 @@ function oauth_get_token($authCfg, $code)
 	$context = stream_context_create($opts);
 	$userprofile=file_get_contents($authCfg['oauth_profile'] , true,$context);
 	$userInfo =  json_decode($userprofile);
-
     if (isset($userInfo->{'username'})){
       if (isset($authCfg['oauth_domain'])) {
         $domain = substr(strrchr($userInfo->{'email'}, "@"), 1);
@@ -64,10 +63,12 @@ function oauth_get_token($authCfg, $code)
       $result->status['msg'] = 'User ID is empty';
       $result->status['status'] = tl::ERROR;
     }
+    print($userprofile);
     $options = new stdClass();
     $options->givenName = $userInfo->{'given_name'};
     $options->familyName = $userInfo->{'family_name'};
-    $options->user = $userInfo->{'email'};
+    $options->email=$userInfo->{'email'};
+    $options->user = $userInfo->{'username'};
     $options->auth = 'oauth';
     $result->options = $options;
   } else {
