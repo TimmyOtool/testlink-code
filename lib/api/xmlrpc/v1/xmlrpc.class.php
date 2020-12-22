@@ -5085,9 +5085,10 @@ class TestlinkXMLRPCServer extends IXR_Server {
             }
 
             $docRepo = tlAttachmentRepository::create( $this->dbObj );
-            $uploadedFile = $docRepo->insertAttachment( $fkId, $fkTable, $title, $fInfo );
+            $uploadOp = $docRepo->insertAttachment( $fkId, $fkTable, $title, $fInfo );
             
-            if(!$uploadedFile) {
+
+            if($uploaOp->statusOK == false) {
               $msg = $msg_prefix . ATTACH_DB_WRITE_ERROR_STR;
               $this->errors[] = new IXR_ERROR( ATTACH_DB_WRITE_ERROR, $msg );
               $statusOK = false;
@@ -6083,7 +6084,11 @@ class TestlinkXMLRPCServer extends IXR_Server {
             }
             // lazy way
             $name = trim( $this->args[self::$platformNameParamName] );
-            $itemSet = $this->platformMgr->getAllAsMap( 'name', 'allinfo' );
+
+            $opx = array('accessKey' => 'name',
+                         'output' => 'allinfo');
+
+            $itemSet = $this->platformMgr->getAllAsMap($opx);
             if(isset( $itemSet[$name] )) {
                 $status_ok = false;
                 $msg = $msg_prefix . sprintf( PLATFORMNAME_ALREADY_EXISTS_STR, $name, $itemSet[$name]['id'] );

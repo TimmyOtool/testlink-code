@@ -129,16 +129,19 @@ if( $doIt ) {
     case 'fileUpload':
       switch($level) {
         case 'testsuite':
-          fileUploadManagement($db,$args->testsuiteID,$args->fileTitle,$tsuite_mgr->getAttachmentTableName());
+          $uploadOp = fileUploadManagement($db,$args->testsuiteID,$args->fileTitle,$tsuite_mgr->getAttachmentTableName());
           $gui = initializeGui($tsuite_mgr,$args->testsuiteID,$args);
           $gui->refreshTree = 0;
+          $gui->uploadOp = $uploadOp;
           $tsuite_mgr->show($smarty,$gui,$template_dir,$args->testsuiteID,null,null);
         break;
 
         case 'testproject':
-          fileUploadManagement($db,$args->tprojectID,$args->fileTitle,$tproject_mgr->getAttachmentTableName());
+          $uploadOp = fileUploadManagement($db,$args->tprojectID,$args->fileTitle,$tproject_mgr->getAttachmentTableName());
           $gui = initializeGui($tproject_mgr,$args->tprojectID,$args);
           $gui->refreshTree = 0;
+          $gui->uploadOp = $uploadOp;
+         
           $tproject_mgr->show($smarty,$gui,$template_dir,$args->tprojectID,null,null);
         break;
       }
@@ -686,6 +689,7 @@ function deleteTestSuite(&$smartyObj,&$argsObj,&$tsuiteMgr,&$treeMgr,&$tcaseMgr,
     $smartyObj->assign('objectID',$argsObj->testsuiteID);
     $smartyObj->assign('objectType','testsuite');
     $smartyObj->assign('objectName', $argsObj->tsuite_name);
+    $smartyObj->assign('containerType', $argsObj->containerType);    
     $smartyObj->assign('delete_msg',$map_msg['delete_msg']);
     $smartyObj->assign('warning', $map_msg['warning']);
     $smartyObj->assign('link_msg', $map_msg['link_msg']);
@@ -1098,22 +1102,22 @@ args:
 returns: -
 
 */
-function moveTestCases(&$smartyObj,$template_dir,&$tsuiteMgr,&$treeMgr,$argsObj,$lbl)
+function moveTestCases(&$smartyObj,$template_dir,&$tsuiteMgr,&$treeMgr,$argsObj)
 {
-    if(sizeof($argsObj->tcaseSet) > 0)
-    {
-        $status_ok = $treeMgr->change_parent($argsObj->tcaseSet,$argsObj->containerID);
-        $user_feedback= $status_ok ? '' : lang_get('move_testcases_failed');
+  $lbl = $argsObj->l10n; 
+  if (sizeof($argsObj->tcaseSet) > 0) {
+    $status_ok = $treeMgr->change_parent($argsObj->tcaseSet,$argsObj->containerID);
+    $user_feedback= $status_ok ? '' : lang_get('move_testcases_failed');
 
-        // objectID - original container
-        $guiObj = new stdClass();
-        $guiObj->attachments = getAttachmentInfosFrom($tsuiteMgr,$argsObj->objectID);
-        $guiObj->id = $argsObj->objectID;
-        $guiObj->refreshTree = true;
-        $guiObj->btn_reorder_testcases = $lbl['btn_reorder_testcases'];
+    // objectID - original container
+    $guiObj = new stdClass();
+    $guiObj->attachments = getAttachmentInfosFrom($tsuiteMgr,$argsObj->objectID);
+    $guiObj->id = $argsObj->objectID;
+    $guiObj->refreshTree = true;
+    $guiObj->btn_reorder_testcases = $lbl['btn_reorder_testcases'];
 
-        $tsuiteMgr->show($smartyObj,$guiObj,$template_dir,$argsObj->objectID,null,$user_feedback);
-    }
+    $tsuiteMgr->show($smartyObj,$guiObj,$template_dir,$argsObj->objectID,null,$user_feedback);
+  }
 }
 
 
@@ -1265,8 +1269,7 @@ function deleteTestCasesViewer(&$dbHandler,&$smartyObj,&$tprojectMgr,&$treeMgr,&
       $guiObj->user_feedback = is_null($guiObj->user_feedback) ? lang_get('no_testcases_available') : $guiObj->user_feedback;
     }
 
-    if(!$argsObj->grants->delete_executed_testcases && $hasExecutedTC)
-    {
+    if (!$argsObj->grants->delete_executed_testcases && $hasExecutedTC) {
       $guiObj->system_message = lang_get('system_blocks_delete_executed_tc');
     }
 
@@ -1400,6 +1403,8 @@ function initializeGui(&$objMgr,$id,$argsObj,$lbl=null) {
                                   $guiObj->id,$argsObj->tprojectID);
   }  
 
+
+  $guiObj->modify_tc_rights = $argsObj->grants->testcase_mgmt;
   return $guiObj;
 }
 

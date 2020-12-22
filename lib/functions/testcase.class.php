@@ -6,7 +6,7 @@
  * @filesource  testcase.class.php
  * @package     TestLink
  * @author      Francisco Mancardi (francisco.mancardi@gmail.com)
- * @copyright   2005-2019, TestLink community
+ * @copyright   2005-2020, TestLink community
  * @link        http://www.testlink.org/
  *
  */
@@ -1607,42 +1607,38 @@ class testcase extends tlObjectWithAttachments {
              " AND    NHB.id = TTC.testplan_id " .
              " AND    NH.parent_id = {$id}";
 
-            if(!is_null($tplan_id))
-            {
-                $sql .= " AND TTC.testplan_id = {$tplan_id} ";
+            if (!is_null($tplan_id)) {
+              $sql .= " AND TTC.testplan_id = {$tplan_id} ";
             }
 
-            if(!is_null($platform_id))
-            {
-                $sql .= " AND TTC.platform_id = {$platform_id} ";
+            if (!is_null($platform_id)) {
+              $sql .= " AND TTC.platform_id = {$platform_id} ";
             }
 
             $recordset = $this->db->fetchMapRowsIntoMap($sql,'tcversion_id','testplan_id',database::CUMULATIVE);
 
-        if( !is_null($recordset) )
-        {
+        if (!is_null($recordset)) {
           // changes third access key from sequential index to platform_id
-          foreach ($recordset as $accessKey => $testplan)
-          {
-            foreach ($testplan as $tplanKey => $testcases)
-            {
+          foreach ($recordset as $accessKey => $testplan) {
+            foreach ($testplan as $tplanKey => $testcases) {
               // Use a temporary array to avoid key collisions
               $newArray = array();
-              foreach ($testcases as $elemKey => $element)
-              {
+              foreach ($testcases as $elemKey => $element) {
                 $platform_id = $element['platform_id'];
                 $newArray[$platform_id] = $element;
               }
               $recordset[$accessKey][$tplanKey] = $newArray;
-              }
+            }
           }
         }
       break;
 
       case "EXECUTED":
       case "NOT_EXECUTED":
-        $getFilters = array('exec_status' => $exec_status,'active_status' => $active_status,
-                            'tplan_id' => $tplan_id, 'platform_id' => $platform_id);
+        $getFilters = array('exec_status' => $exec_status,
+                            'active_status' => $active_status,
+                            'tplan_id' => $tplan_id, 
+                            'platform_id' => $platform_id);
         $recordset=$this->get_exec_status($id,$getFilters);
       break;
     }
@@ -1881,14 +1877,19 @@ class testcase extends tlObjectWithAttachments {
   /*
     @internal revisions
   */
-  function copy_to($id,$parent_id,$user_id,$options=null,$mappings=null) {
-    $newTCObj = array('id' => -1, 'status_ok' => 0, 'msg' => 'ok', 'mappings' => null);
-    $my['options'] = array('check_duplicate_name' => self::DONT_CHECK_DUPLICATE_NAME,
+  function copy_to($id,$parent_id,$user_id,$options=null,$mappings=null) 
+  {
+    $newTCObj = array('id' => -1, 'status_ok' => 0, 
+                      'msg' => 'ok', 'mappings' => null);
+    $my['options'] = array('check_duplicate_name' => 
+                             self::DONT_CHECK_DUPLICATE_NAME,
                            'action_on_duplicate_name' => 'generate_new',
                            'use_this_name' => null,
-                           'copy_also' => null, 'preserve_external_id' => false,
-                           'renderGhostSteps' => false, 'stepAsGhost' => false);
-
+                           'copy_also' => null, 
+                           'preserve_external_id' => false,
+                           'renderGhostSteps' => false, 
+                           'stepAsGhost' => false,
+                           'copyOnlyLatest' => false);
 
     // needed when Test Case is copied to a DIFFERENT Test Project,
     // added during Test Project COPY Feature implementation
@@ -1914,15 +1915,20 @@ class testcase extends tlObjectWithAttachments {
                       $my['options']['copy_also'][$uglyKey]);
     // ==================================================================
 
+    $useLatest = $my['options']['stepAsGhost'] 
+                 || $my['options']['copyOnlyLatest'];
 
-    $tcVersionID = $my['options']['stepAsGhost'] ? self::LATEST_VERSION : self::ALL_VERSIONS;
+    $tcVersionID = $useLatest ? self::LATEST_VERSION : self::ALL_VERSIONS;
     $tcase_info = $this->get_by_id($id,$tcVersionID);
     if ($tcase_info) {
-      $callme = !is_null($my['options']['use_this_name']) ? $my['options']['use_this_name'] : $tcase_info[0]['name'];
+      $callme = !is_null($my['options']['use_this_name']) ? 
+                $my['options']['use_this_name'] : $tcase_info[0]['name'];
       $callme = $this->trim_and_limit($callme);
 
-      $newTCObj = $this->create_tcase_only($parent_id,$callme,$tcase_info[0]['node_order'],self::AUTOMATIC_ID,
-                                           $my['options']);
+      $newTCObj = $this->create_tcase_only($parent_id,
+                    $callme,$tcase_info[0]['node_order'],
+                    self::AUTOMATIC_ID,$my['options']);
+
       $ix = new stdClass();
       $ix->authorID = $user_id;
       $ix->status = null;
@@ -1939,7 +1945,6 @@ class testcase extends tlObjectWithAttachments {
           $ix->externalID = $tcase_info[0]['tc_external_id'];
         }
 
-        
         foreach($tcase_info as $tcversion) {
 
           // IMPORTANT NOTICE:
@@ -1949,7 +1954,12 @@ class testcase extends tlObjectWithAttachments {
 
           $ix->executionType = $tcversion['execution_type'];
           $ix->importance = $tcversion['importance'];
+          
           $ix->version = $tcversion['version'];
+          if ($my['options']['copyOnlyLatest']) {
+            $ix->version = 1;
+          }
+
           $ix->status = $tcversion['status'];
           $ix->estimatedExecDuration = $tcversion['estimated_exec_duration'];
           $ix->is_open = $tcversion['is_open'];
@@ -6885,6 +6895,10 @@ class testcase extends tlObjectWithAttachments {
       $goo->closeMyWindow = 0;
     }
 
+    if( !property_exists($goo, 'uploadOp') ) {
+      $goo->uploadOp = null;
+    }
+
     $goo->new_version_source = 'this';
 
     $goo->execution_types = $this->execution_types;
@@ -6995,6 +7009,11 @@ class testcase extends tlObjectWithAttachments {
       $goo->can_do->freeze = $grantsObj->$key;
     }
 
+    $key = 'delete_frozen_tcversion';
+    if(property_exists($grantsObj, $key)) {
+      $goo->can_do->delete_frozen_tcversion = $grantsObj->$key;
+    }
+
     $path2root = $this->tree_manager->get_path($id);
     $goo->tproject_id = $path2root[0]['parent_id'];
     $info = $this->tproject_mgr->get_by_id($goo->tproject_id);
@@ -7015,7 +7034,10 @@ class testcase extends tlObjectWithAttachments {
 
 
     $platformMgr = new tlPlatform($this->db,$goo->tproject_id);
-    $goo->platforms = $platformMgr->getAllAsMap();
+
+    $opx = array('enable_on_design' => true,
+                 'enable_on_execution' => false);
+    $goo->platforms = $platformMgr->getAllAsMap($opx);
 
     $goo->tcasePrefix = $this->tproject_mgr->getTestCasePrefix($goo->tproject_id) . $this->cfg->testcase->glue_character;
 
@@ -8820,7 +8842,7 @@ class testcase extends tlObjectWithAttachments {
       $key2check = array('summary','preconditions');
     }
 
-    if( !$skwSet[$tcase_id] ) {
+    if( null==$skwSet || !$skwSet[$tcase_id] ) {
       $optSKW = array('getTSuiteKeywords' => true);
       $skwSet[$tcase_id] = $this->getPathLayered($tcase_id,$optSKW);      
     }
@@ -9273,6 +9295,8 @@ class testcase extends tlObjectWithAttachments {
     $sql = " SELECT PL.id AS platform_id, PL.name AS platform
              FROM {$this->tables['platforms']} PL
              WHERE PL.testproject_id = {$tproject_id}
+             AND PL.enable_on_design = 1
+             AND PL.enable_on_execution = 0
              AND PL.id NOT IN 
              (
                SELECT TCPL.platform_id 
