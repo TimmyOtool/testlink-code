@@ -59,7 +59,7 @@
           {/if}
 
           <div class="login-wrap">
-            <input maxlength="{#LOGIN_MAXLEN#}" name="tl_login" id="tl_login"
+  <!--          <input maxlength="{#LOGIN_MAXLEN#}" name="tl_login" id="tl_login"
               type="text" class="form-control" placeholder="{$labels.login_name}"
               required autofocus>
             <br>
@@ -72,7 +72,7 @@
               class="btn btn-theme btn-block" type="submit">
               <i class="fa fa-lock"></i> {$labels.btn_login} </button>
             <hr>
-            
+            -->
             {foreach from=$gui->oauth item=oauth_item}
                 <div class="button">
                 <a style="text-decoration: none;" href="{$oauth_item->link}">
