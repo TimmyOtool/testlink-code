@@ -6,9 +6,8 @@
  * @filesource planMilestonesCommands.class.php
  * @author Francisco Mancardi
  * 
- * @internal revisions
  */
-require_once("testplan.class.php");  // needed because milestone_mgr is inside
+require_once("milestone.class.php");  
 class planMilestonesCommands
 {
   private $db;
@@ -21,7 +20,7 @@ class planMilestonesCommands
   function __construct(&$db)
   {
       $this->db = $db;
-      $this->milestone_mgr = new milestone_mgr($db);
+      $this->milestone_mgr = new milestone($db);
     $this->submit_button_label = lang_get('btn_save');
   }
 
@@ -74,13 +73,12 @@ class planMilestonesCommands
     // localize target date (is always set on edit)
     $guiObj->milestone['target_date'] = localize_dateOrTimeStamp(null, $dummy, 'date_format',$guiObj->milestone['target_date']);
       
-    // as start date is optional it can be "0000-00-00" (default timestamp)
-    if ($guiObj->milestone['start_date'] != "0000-00-00") 
-    {
+    // as start date is optional it can be "0000-00-00" OR NULL
+    // depending of DBMS (default timestamp)
+    if (null != $guiObj->milestone['start_date']
+        && $guiObj->milestone['start_date'] != "0000-00-00") {
       $guiObj->milestone['start_date'] = localize_dateOrTimeStamp(null, $dummy, 'date_format',$guiObj->milestone['start_date']);
-    } 
-    else 
-    {
+    } else {
       $guiObj->milestone['start_date'] = "";
     }
       
@@ -156,22 +154,14 @@ class planMilestonesCommands
             }
         }
 
-    if($op_ok)
-    {
+    if ($op_ok) {
       // avoid warning on event viewer
       if (!isset($argsObj->start_date)) {
         $argsObj->start_date = "";
       }
-      /*
-          $argsObj->id = $this->milestone_mgr->create($argsObj->tplan_id,$argsObj->name,
-                                                      $argsObj->target_date,$argsObj->start_date,
-                                                      $argsObj->low_priority_tcases,
-                                                      $argsObj->medium_priority_tcases,
-                                                      $argsObj->high_priority_tcases);
-          */
-            $argsObj->low_priority = $argsObj->low_priority_tcases;
-          $argsObj->medium_priority = $argsObj->medium_priority_tcases;
-          $argsObj->high_priority = $argsObj->high_priority_tcases;
+      $argsObj->low_priority = $argsObj->low_priority_tcases;
+      $argsObj->medium_priority = $argsObj->medium_priority_tcases;
+      $argsObj->high_priority = $argsObj->high_priority_tcases;
          
           $argsObj->id = $this->milestone_mgr->create($argsObj);
 

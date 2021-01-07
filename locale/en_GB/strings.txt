@@ -4038,4 +4038,52 @@ $TLS_on_design = 'On Design';
 $TLS_on_exec = 'On Execution';
 $TLS_note_platform_filter = 'Test Cases are filtered by following platforms';
 $TLS_testers_qty = 'Number of testers';
-// ----- END ------------------------------------------------------------------
+
+$TLS_search = "Search";
+$TLS_advanced_search = "Advanced search";
+$TLS_quick_search = "Quick search";
+$TLS_projects = 'Projects';
+$TLS_system = 'System';
+$TLS_tests_design = 'Test Case Design';
+$TLS_requirements_design = 'Requirements Design';
+$TLS_testcase_execution = 'Test Case Execution';
+
+$TLS_tc_monthly_creation_rate_on_tproj = 
+  'Monthly Test Case Growth on Test Project';
+$TLS_tc_monthly_creation_rate_on_tproj_hint =
+  '(based on latest test case version creation date)'; 
+
+$TLS_selected_cb = '%s checkboxes have been checked ';
+$TLS_deselected_cb = '%s checkboxes have been unchecked';
+$TLS_reload_main_view = "Reload Main View";
+$TLS_toggle_navigation = "Toggle Navigation";
+$TLS_delete_keyword = "Delete Keyword";
+$TLS_reports = "Reports";
+$TLS_on_testproject = "On Test Project";
+
+$TLS_alien = 'Alien References';
+$TLS_aliens = 'Alien References';
+$TLS_select_aliens = 'Select Alien References';
+
+$TLS_remove_platform_msgbox_title = "Remove Platform";
+$TLS_remove_platform_msgbox_msg = "Really Remove Platform #%i?";
+$TLS_remove_alien_msgbox_title = "Remove Alien Reference";
+$TLS_remove_alien_msgbox_msg = "Really Remove Alien Reference #%i?";
+$TLS_audit_alien_assignment_removed_tc = "Alien Reference '{%1}' was removed from Test Case '{%2}'";
+
+$TLS_reference_not_found = "Test Link Warning!! - reference does not exist";
+
+$TLS_external_ref = "Reference";
+$TLS_hint_list_of_external_ref = 'REFX,REFY,REFZ';
+
+$TLS_alien_reportedBy = 'Reported By';
+$TLS_alien_handledBy = 'Assigned To / Handled By';
+$TLS_alien_version = 'Version';
+$TLS_alien_fixedInVersion = 'Fixed In Version';
+$TLS_alien_statusVerbose = 'Status';
+$TLS_testing_a_fix = 'Fix';
+$TLS_testing_a_regression = 'Regression';
+$TLS_testing_a_requirement = 'Requirement';
+
+$TLS_alien_relTypeVerbose = ' ';
+// ----- END -----------------------------------------------------

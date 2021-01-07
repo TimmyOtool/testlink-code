@@ -3,17 +3,15 @@
  *  TestLink Open Source Project - http://testlink.sourceforge.net/
  * 
  *  @filesource   archiveData.php
- *  @author       Martin Havlat
  * 
  *  Allows you to show test suites, test cases.
  *
  *  USE CASES
  *  1. Launched from tree navigator on Test Specification feature.
- *     On this Use Case, test project is setted using SESSION value
- *     or (in next versions) using value passed on call.
  *
  *  2. Search option on Navigation Bar.
- *     In this Use Case, user can try to search for test cases that DO NOT BELONG
+ *     In this Use Case, user can try to search for test cases that 
+ *     DO NOT BELONG
  *     to current setted Test Project.
  *     System try to get Test Project analising user provided data 
  *    (test case identification)
@@ -25,17 +23,16 @@ require_once('common.php');
 testlinkInitPage($db);
 
 $smarty = new TLSmarty();
-$smarty->tlTemplateCfg = $templateCfg = templateConfiguration();
+$smarty->tlTemplateCfg = $tplCfg = templateConfiguration();
 
-$cfg = array('testcase' => config_get('testcase_cfg'),'testcase_reorder_by' => config_get('testcase_reorder_by'),
+$cfg = array('testcase' => config_get('testcase_cfg'),
+             'testcase_reorder_by' => 
+               config_get('testcase_reorder_by'),
              'spec' => config_get('spec_cfg'));
 
 list($args,$gui,$grants) = initializeEnv($db);
 
-
 // User right at test project level has to be done
-// Because this script can be called requesting an item that CAN BELONG
-// to a test project DIFFERENT that value present on SESSION,
 // we need to use requested item to get its right Test Project
 // We will start with Test Cases ONLY
 switch($args->feature) {
@@ -46,12 +43,12 @@ switch($args->feature) {
     $gui->user = $args->user;
     if($args->feature == 'testproject') {
       $gui->id = $args->id = $args->tproject_id;
-      $item_mgr->show($smarty,$gui,$templateCfg->template_dir,$args->id);
-    }
-    else {
-      $gui->direct_link = $item_mgr->buildDirectWebLink($_SESSION['basehref'],$args->id,$args->tproject_id);
+      $item_mgr->show($smarty,$gui,
+                      $tplCfg->template_dir,$args->id);
+    } else {
+      $gui->direct_link = $item_mgr->buildDirectWebLink($args);
       $gui->attachments = getAttachmentInfosFrom($item_mgr,$args->id);
-      $item_mgr->show($smarty,$gui,$templateCfg->template_dir,$args->id,
+      $item_mgr->show($smarty,$gui,$tplCfg->template_dir,$args->id,
                       array('show_mode' => $args->show_mode));
     }
     break;
@@ -78,8 +75,10 @@ switch($args->feature) {
  *
  */
 function init_args(&$dbHandler) {
-  $_REQUEST=strings_stripSlashes($_REQUEST);
+  $_REQUEST = strings_stripSlashes($_REQUEST);
 
+  list($context,$env) = initContext();
+  
   $iParams = array("edit" => array(tlInputParameter::STRING_N,0,50),
                    "id" => array(tlInputParameter::INT_N),
                    "tcase_id" => array(tlInputParameter::INT_N),
@@ -92,17 +91,28 @@ function init_args(&$dbHandler) {
                    "tcaseExternalID" => array(tlInputParameter::STRING_N,0,16),
                    "tcaseVersionNumber" => array(tlInputParameter::INT_N),
                    "add_relation_feedback_msg" => array(tlInputParameter::STRING_N,0,255),
-                   "caller" => array(tlInputParameter::STRING_N,0,10));               
+                   "caller" => array(tlInputParameter::STRING_N,0,10),
+                   "tproject_id" => array(tlInputParameter::INT_N),
+                   "containerType" => array(tlInputParameter::STRING_N,0,12));
+
 
   $args = new stdClass();
   R_PARAMS($iParams,$args);
+  $args->form_token = $context->form_token;
+  $args->user_id = $context->userID;
+  $args->user = $context->user;
+  $args->basehref = $_SESSION['basehref'];
 
   $tprojectMgr = new testproject($dbHandler);
-  
+  switch ($args->containerType) {
+    case 'testproject':
+      if ($args->tproject_id == 0) {
+        $args->tproject_id = $args->id;
+      }
+    break;
+  }
+
   $cfg = config_get('testcase_cfg');
-  $args->tproject_id = isset($_SESSION['testprojectID']) ? intval($_SESSION['testprojectID']) : 0;
-  $args->user_id = isset($_SESSION['userID']) ? $_SESSION['userID'] : 0;
-  $args->user = isset($_SESSION['currentUser']) ? $_SESSION['currentUser'] : null;
 
   // ---------------------------
   // whitelist
@@ -124,9 +134,6 @@ function init_args(&$dbHandler) {
   $args->requirementsEnabled = 0;
   $args->testPriorityEnabled = 0;
   $args->tcasePrefix = trim($args->tcasePrefix);
-  $args->form_token = isset($_REQUEST['form_token']) ? $_REQUEST['form_token'] : 0;
-
-
 
   // For more information about the data accessed in session here, see the comment
   // in the file header of lib/functions/tlTestCaseFilterControl.class.php.
@@ -142,7 +149,8 @@ function init_args(&$dbHandler) {
       // all data come in
       // tcaseExternalID   DOM-22
       // tcaseVersionNumber  1
-      $args->targetTestCase = $args->tcaseExternalID; // trick for systemWideTestCaseSearch
+      // trick for systemWideTestCaseSearch
+      $args->targetTestCase = $args->tcaseExternalID; 
       systemWideTestCaseSearch($dbHandler,$args,$cfg->glue_character);
     break;
 
@@ -182,8 +190,10 @@ function init_args(&$dbHandler) {
   }
 
   if(is_null($args->tcaseTestProject)) {  
-    $args->tcaseTestProject = $tprojectMgr->get_by_id($args->tproject_id);
+    $args->tcaseTestProject = 
+      $tprojectMgr->get_by_id($args->tproject_id);
   }
+
   $args->requirementsEnabled = $args->tcaseTestProject['opt']->requirementsEnabled;
   $args->automationEnabled = $args->tcaseTestProject['opt']->automationEnabled;
   $args->testPriorityEnabled = $args->tcaseTestProject['opt']->testPriorityEnabled;
@@ -210,9 +220,10 @@ function init_args(&$dbHandler) {
  * 
  *
  */
-function initializeEnv($dbHandler) {
+function initializeEnv(&$dbHandler)
+{
   $args = init_args($dbHandler);
-  $gui = new stdClass();
+  list($add2args,$gui) = initUserEnv($dbHandler,$args);
 
   $grant2check = 
     array('mgt_modify_tc','mgt_view_req','testplan_planning',
@@ -370,11 +381,9 @@ function processTestCase(&$dbHandler,$tplEngine,$args,&$gui,$grants,$cfg) {
       $gui->path_info = $item_mgr->tree_manager->get_full_path_verbose($args->id);
     }
     $platform_mgr = new tlPlatform($dbHandler,$args->tproject_id);
-
-    $opx = array();
-    $gui->platforms = $platform_mgr->getAllAsMap();
-    $gui->direct_link = $item_mgr->buildDirectWebLink($_SESSION['basehref'],$args->id);
-
+    $opx = array('enable_on_design' => true);
+    $gui->platforms = $platform_mgr->getAllAsMap($opx);
+    $gui->direct_link = $item_mgr->buildDirectWebLink($args);
     $gui->id = $args->id;
 
     $identity = new stdClass();
@@ -410,7 +419,7 @@ function processTestCase(&$dbHandler,$tplEngine,$args,&$gui,$grants,$cfg) {
     exit();
   }
   else {
-    $templateCfg = templateConfiguration();
+    $tplCfg = templateConfiguration();
     
     // need to initialize search fields
     $xbm = $item_mgr->getTcSearchSkeleton();
@@ -430,11 +439,11 @@ function processTestCase(&$dbHandler,$tplEngine,$args,&$gui,$grants,$cfg) {
     // 
     $cfMgr = new cfield_mgr($dbHandler);
     $xbm->design_cf = $cfMgr->get_linked_cfields_at_design($args->tproject_id,
-                                                                           cfield_mgr::ENABLED,null,'testcase');
+                              cfield_mgr::ENABLED,null,'testcase');
 
     $xbm->filter_by['design_scope_custom_fields'] = !is_null($xbm->design_cf);
 
     $tplEngine->assign('gui',$xbm);
-    $tplEngine->display($templateCfg->template_dir . 'tcSearchResults.tpl');
+    $tplEngine->display($tplCfg->template_dir . 'tcSearchResults.tpl');
   }  
 }
