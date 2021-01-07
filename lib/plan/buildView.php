@@ -10,25 +10,26 @@
  */
 require('../../config.inc.php');
 require_once("common.php");
-testlinkInitPage($db,false,false,"checkRights");
-
-$templateCfg = templateConfiguration();
-
-
+testlinkInitPage($db);
 
 $gui = initEnv($db);
 
-function initEnv(&$dbHandler)
-{
-  $gui = new StdClass();
+$tplCfg = templateConfiguration();
+$smarty = new TLSmarty();
+$smarty->assign('gui', $gui);
+$smarty->display($tplCfg->template_dir . $tplCfg->default_template);
 
-  $_REQUEST = strings_stripSlashes($_REQUEST);
 
-  
+/**
+ *
+ */
+function initEnv(&$dbHandler) {
 
-  $gui->tplan_id = isset($_REQUEST['tplan_id']) ? intval($_REQUEST['tplan_id']) : 0;
-  if( $gui->tplan_id == 0 )
-  {
+  list($context,$env) = initContext();
+  list($args,$gui) = initUserEnv($dbHandler,$context);
+  $gui->activeMenu['plans'] = 'active';
+
+  if( $gui->tplan_id == 0 ) {
     throw new Exception("Abort Test Plan ID == 0", 1);
   }  
 
@@ -36,12 +37,9 @@ function initEnv(&$dbHandler)
   $info = $tplan_mgr->tree_manager->
             get_node_hierarchy_info($gui->tplan_id,null,array('nodeType' => 'testplan'));
 
-  if( !is_null($info) )
-  {
+  if( !is_null($info) ) {
     $gui->tplan_name = $info['name'];
-  }  
-  else
-  {
+  } else {
     throw new Exception("Invalid Test Plan ID", 1);
   }  
  
@@ -51,15 +49,16 @@ function initEnv(&$dbHandler)
   $cfg = getWebEditorCfg('build');
   $gui->editorType = $cfg['type'];
   
+
+  // ----------------------------------------------------------------
+  // Feature Access Check
+  $env = array()
+  $env['script'] = basename(__FILE__);
+  $env['tproject_id'] = $gui->tproject_id;
+  $env['tplan_id'] = $gui->tplan_id;
+  $args->user->checkGUISecurityClearance(dbHandler,$env,
+                    array('testplan_create_build'),'and');
+  // ----------------------------------------------------------------
+
   return $gui;  
-}
-
-$smarty = new TLSmarty();
-$smarty->assign('gui', $gui);
-$smarty->display($templateCfg->template_dir . $templateCfg->default_template);
-
-
-function checkRights(&$db,&$user)
-{
-  return $user->hasRight($db,'testplan_create_build');
 }

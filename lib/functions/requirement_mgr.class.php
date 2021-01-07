@@ -1104,8 +1104,18 @@ function create_tc_from_requirement($mixIdReq,$srs_id, $user_id, $tproject_id = 
 
     $output = 0;
     $now = $this->db->db_now();
-    if($testcase_id && $req_id) {
 
+    if ($testcase_id && $req_id) {
+      // Get Latest Active Test Case Version 
+      $tcv = current($tcMgr->get_last_active_version($testcase_id));
+      if ($tcv == null) {
+        // Latest version is Inactive => operation not allowed
+        return $output;
+      }
+    }
+
+    // Go ahead!    
+    if($testcase_id && $req_id) {
       // Need to get latest version for each requirement
       $reqIDSet = (array)$req_id;
       $gopt = array('output' => 'id,version');
@@ -1118,8 +1128,7 @@ function create_tc_from_requirement($mixIdReq,$srs_id, $user_id, $tproject_id = 
         $reqLatestVersionNumberSet[] = $isofix['version'];
       }
 
-      // Get Latest Active Test Case Version 
-      $tcv = current($tcMgr->get_last_active_version($testcase_id));
+      // Latest Active Test Case Version 
       $ltcv = $tcv['tcversion_id'];
       $ltcvNum = $tcv['version'];
       $in_clause = implode(",",$reqLatestVersionIDSet);
@@ -3475,13 +3484,14 @@ function html_table_of_custom_field_values($id,$child_id,$tproject_id=null)
    *
    * @used-by 
    */
-  function getFileUploadRelativeURL($req_id,$req_version_id) {
+  function getFileUploadRelativeURL($req_id,$req_version_id,$tproject_id) {
     $sfReqID = intval($req_id);
     $sfVersion = intval($req_version_id);
 
     $url = "lib/requirements/reqEdit.php" .
            "?doAction=fileUpload&requirement_id=" . $sfReqID . 
-           "&req_id=" . $sfReqID ."&req_version_id=" . $sfVersion;
+           "&req_id=" . $sfReqID . "&req_version_id=" . $sfVersion .
+           "&tproject_id=" . intval($tproject_id);
 
     return $url;
   }
@@ -3490,10 +3500,11 @@ function html_table_of_custom_field_values($id,$child_id,$tproject_id=null)
    *
    * @used-by 
    */
-  function getDeleteAttachmentRelativeURL($req_id,$req_version_id) {
+  function getDeleteAttachmentRelativeURL($req_id,$req_version_id,$tproject_id) {
     $url = "lib/requirements/reqEdit.php?doAction=deleteFile" .
            "&requirement_id=" . intval($req_id) . 
            "&req_version_id=" . intval($req_version_id) .
+           "&tproject_id=" . intval($tproject_id) .
            "&file_id=" ; 
     return $url;
   }
@@ -4087,20 +4098,16 @@ function getCoverageCounter($id) {
   function inlineImageProcessing($idCard,$scope,$rosettaStone) {
     // get all attachments, then check is there are images
     $att = $this->attachmentRepository->getAttachmentInfosFor($idCard->id,$this->attachmentTableName,'id');
-    foreach($rosettaStone as $oid => $nid)
-    {
-      if($att[$nid]['is_image'])
-      {
+    foreach($rosettaStone as $oid => $nid) {
+      if($att[$nid]['is_image']) {
         $needle = str_replace($nid,$oid,$att[$nid]['inlineString']);
         $inlineImg[] = array('needle' => $needle, 'rep' => $att[$nid]['inlineString']);
       }  
     }  
     
-    if( !is_null($inlineImg) )
-    {
+    if( !is_null($inlineImg) ) {
       $dex = $scope;
-      foreach($inlineImg as $elem)
-      {
+      foreach($inlineImg as $elem) {
         $dex = str_replace($elem['needle'],$elem['rep'],$dex);
       }  
       $this->updateScope($idCard->versionID,$dex);

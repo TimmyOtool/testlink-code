@@ -123,10 +123,11 @@ $tlCfg->custom_css = null;
 
 
 /** Include constants and magic numbers (users should not change it)*/
-require_once(TL_ABS_PATH . 'cfg' . DIRECTORY_SEPARATOR . 'const.inc.php');
+$cfgPath = TL_ABS_PATH . 'cfg' . DIRECTORY_SEPARATOR;
+require_once($cfgPath . 'const.inc.php');
 
 
-// ----------------------------------------------------------------------------
+// --------------------------------------------------------------
 /** @var string used to have (when needed) a possibility to identify different TL instances
     @since 1.9.4 used on mail subject when mail logger is used
  */
@@ -148,7 +149,7 @@ $tlCfg->gui->ux = 'tl-classic';
  * @see $tlCfg->cookie->path
  * @global string $tlCfg->cookie->prefix
  */
-$tlCfg->cookie->prefix = 'TESTLINK1920';
+$tlCfg->cookie->prefix = 'TESTLINK200';
 
 /**
  * @link http://php.net/function.setcookie
@@ -1138,15 +1139,23 @@ $tlCfg->exec_cfg->steps_exec_notes_default = 'empty';
 // 'latest' => latest execution notes.
 $tlCfg->exec_cfg->steps_exec_status_default = 'empty';
 
-// Parameters to show notes/details when entering test execution feature
-// EXPAND: show expanded/open
-// COLLAPSE: show collapsed/closede
-// LAST_USER_CHOICE: get status from cookie that holds last user choice.[STANDARD BEHAVIOUR]
+// Parameters to show notes/details 
+// when entering test execution feature
+// 'EXPAND': show expanded/open
+// 'COLLAPSE': show collapsed/closed
+// 'LAST_USER_CHOICE': 
+//   get status from cookie that holds 
+//   latest user choice.
+//   This is the [STANDARD BEHAVIOUR]
 $tlCfg->exec_cfg->expand_collapse = new stdClass();
-$tlCfg->exec_cfg->expand_collapse->testplan_notes = LAST_USER_CHOICE;
-$tlCfg->exec_cfg->expand_collapse->platform_description = LAST_USER_CHOICE;
-$tlCfg->exec_cfg->expand_collapse->build_description = LAST_USER_CHOICE;
-$tlCfg->exec_cfg->expand_collapse->testsuite_details = LAST_USER_CHOICE;
+$tlCfg->exec_cfg->expand_collapse
+                ->testplan_notes = 'LAST_USER_CHOICE';
+$tlCfg->exec_cfg->expand_collapse
+                ->platform_description = 'LAST_USER_CHOICE';
+$tlCfg->exec_cfg->expand_collapse
+                ->build_description = 'LAST_USER_CHOICE';
+$tlCfg->exec_cfg->expand_collapse
+                ->testsuite_details = 'LAST_USER_CHOICE';
 
 
 
@@ -1290,6 +1299,13 @@ $tlCfg->testcase_cfg->relations->type_description = array(TL_REL_TYPE_PARENT_CHI
 
 
 
+$tlCfg->testcase_cfg->aliens = new stdClass();
+$tlCfg->testcase_cfg->aliens->relationsType = new stdClass();
+$tlCfg->testcase_cfg->aliens->relationsType->labels = array(
+  TL_ALIEN_REL_TYPE_FIX => 'testing_a_fix',
+  TL_ALIEN_REL_TYPE_REGRESSION => 'testing_a_regression',
+  TL_ALIEN_REL_TYPE_REQUIREMENT => 'testing_a_requirement'
+);
 
 // @since 1.9.18
 // TRUE => After a test case version has been executed 
@@ -2045,7 +2061,7 @@ $tlCfg->images = array();
 
 
 
-// ----------------------------------------------------------------------------
+// -------------------------------------------------------------
 /* [PROXY] */
 /* Used only */ 
 /* mantissoapInterface.class.php */
@@ -2060,22 +2076,23 @@ $tlCfg->proxy->password = null;
 /** Plugins feature */
 define('TL_PLUGIN_PATH', dirname(__FILE__) . DIRECTORY_SEPARATOR . 'plugins' . DIRECTORY_SEPARATOR);
 
-// ----- End of Config ------------------------------------------------------------------
-// --------------------------------------------------------------------------------------
+// ----- End of Config ----------------------------------------
+
+// ------------------------------------------------------------
 // DO NOT DO CHANGES BELOW
-// --------------------------------------------------------------------------------------
+// ------------------------------------------------------------
 
 /** Functions for check request status */
 require_once('configCheck.php');
 
-
-if( !defined('TL_JQUERY') )
-{
-  define('TL_JQUERY','jquery-2.2.4.min.js' );
+/**
+ * @see also cfg/const.inc.php
+ */
+if (!defined('TL_JQUERY')) {
+  define('TL_JQUERY','third_party/jquery/jquery-3.4.1.min.js');
 }
 
-if( !defined('TL_DATATABLES_DIR') )
-{
+if (!defined('TL_DATATABLES_DIR')) {
   define('TL_DATATABLES_DIR','DataTables-1.10.4' );
 }
 
@@ -2085,9 +2102,8 @@ if( !defined('TL_DATATABLES_DIR') )
 define('TL_BASE_HREF', get_home_url(array('force_https' => $tlCfg->force_https)));
 
 clearstatcache();
-if ( file_exists( TL_ABS_PATH . 'custom_config.inc.php' ) )
-{
-  require_once( TL_ABS_PATH . 'custom_config.inc.php' );
+if ( file_exists( $cfgPath . 'custom_config.inc.php' ) ) {
+  require_once( $cfgPath . 'custom_config.inc.php' );
 }
 
 
