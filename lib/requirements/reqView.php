@@ -29,7 +29,7 @@ $smarty->display($templateCfg->template_dir . 'reqViewVersions.tpl');
  *
  */
 function init_args( &$reqMgr ) {
-  $_REQUEST = strings_stripSlashes($_REQUEST);
+  $_REQUEST=strings_stripSlashes($_REQUEST);
   $iParams = array("req_id" => array(tlInputParameter::INT_N),
                    "requirement_id" => array(tlInputParameter::INT_N),
                    "req_version_id" => array(tlInputParameter::INT_N),
@@ -37,7 +37,6 @@ function init_args( &$reqMgr ) {
                    "refreshTree" => array(tlInputParameter::INT_N),
                    "relation_add_result_msg" => array(tlInputParameter::STRING_N),
                    "user_feedback" => array(tlInputParameter::STRING_N),
-                   "tproject_id" => array(tlInputParameter::INT_N),
                    "uploadOPStatusCode" => array(tlInputParameter::STRING_N,0,30));
 
   $args = new stdClass();
@@ -57,13 +56,8 @@ function init_args( &$reqMgr ) {
   }
 
   $args->refreshTree = intval($args->refreshTree);
-  if (0==$args->tproject_id) {
-    throw new Exception("Bad Test Project ID", 1);
-  }
-
-  $args->tproject_name = testproject::getName($reqMgr->db,$args->tproject_id);
-  
-
+  $args->tproject_id = intval(isset($_SESSION['testprojectID']) ? $_SESSION['testprojectID'] : 0);
+  $args->tproject_name = isset($_SESSION['testprojectName']) ? $_SESSION['testprojectName'] : null;
   $args->user = $_SESSION['currentUser'];
   $args->userID = $args->user->dbID;
 
@@ -78,7 +72,6 @@ function initialize_gui(&$dbHandler,$argsObj,&$tproject_mgr,&$req_mgr) {
   $commandMgr = new reqCommands($dbHandler);
 
   $gui = $commandMgr->initGuiBean( $argsObj );
-  $gui->tproject_id = $argsObj->tproject_id;
 
   $opt = array('renderImageInline' => true);
   $gui->req_versions = 
@@ -130,20 +123,27 @@ function initialize_gui(&$dbHandler,$argsObj,&$tproject_mgr,&$req_mgr) {
     }
   }
 
-  $gui->direct_link = $_SESSION['basehref'] . 
-    'linkto.php?tprojectPrefix=' . 
-    urlencode($gui->tcasePrefix) . '&item=req&id=' . 
-    urlencode($gui->req['req_doc_id']);
+  $gui->direct_link = $_SESSION['basehref'] . 'linkto.php?tprojectPrefix=' . 
+                      urlencode($gui->tcasePrefix) . '&item=req&id=' . urlencode($gui->req['req_doc_id']);
+
+
+  /*
+  $gui->fileUploadURL = $gui->delAttachmentURL = $_SESSION['basehref'];
+  $gui->fileUploadURL .= 
+    $req_mgr->getFileUploadRelativeURL($gui->req_id, $gui->req_version_id);
+
+  $gui->delAttachmentURL .= 
+    $req_mgr->getDeleteAttachmentRelativeURL($gui->req_id, $gui->req_version_id);
+  */
 
   // Same for all versions because we only use the FILE ID
   // need to be refactored  
   $gui->delAttachmentURL = $_SESSION['basehref'] .  
-    $req_mgr->getDeleteAttachmentRelativeURL($gui->req_id,0,$gui->tproject_id);
+    $req_mgr->getDeleteAttachmentRelativeURL($gui->req_id,0);
   
   $gui->fileUploadURL = array();
   $gui->fileUploadURL[$gui->req_version_id] = $_SESSION['basehref'] . 
-    $req_mgr->getFileUploadRelativeURL($gui->req_id, $gui->req_version_id,
-       $gui->tproject_id);
+    $req_mgr->getFileUploadRelativeURL($gui->req_id, $gui->req_version_id);
 
   $gui->log_target = null;
   $loop2do = count($gui->req_versions);
@@ -160,8 +160,8 @@ function initialize_gui(&$dbHandler,$argsObj,&$tproject_mgr,&$req_mgr) {
   // This logic has been borrowed from test case versions management
   $gui->current_version[0] = array($gui->req);
   $gui->cfields_current_version[0] = 
-    $req_mgr->html_table_of_custom_field_values($gui->req_id,
-      $gui->req['version_id'],$argsObj->tproject_id);
+    $req_mgr->html_table_of_custom_field_values($gui->req_id,$gui->req['version_id'],
+                                                $argsObj->tproject_id);
 
   // Now CF for other Versions
   $gui->other_versions[0] = null;
@@ -176,8 +176,7 @@ function initialize_gui(&$dbHandler,$argsObj,&$tproject_mgr,&$req_mgr) {
 
       // File Upload Management
       $gui->fileUploadURL[$target_version] = $_SESSION['basehref'] . 
-        $req_mgr->getFileUploadRelativeURL($gui->req_id,$target_version,
-           $gui->tproject_id);
+        $req_mgr->getFileUploadRelativeURL($gui->req_id, $target_version);
       }
   }
   
@@ -229,6 +228,7 @@ function initialize_gui(&$dbHandler,$argsObj,&$tproject_mgr,&$req_mgr) {
     $gui->uploadOp->statusCode = $argsObj->uploadOPStatusCode;
     $gui->uploadOp->msg = lang_get($argsObj->uploadOPStatusCode);
   }
+  
   return $gui;
 }
 

@@ -154,22 +154,17 @@ function STS(id)
   returns:
 
 */
-function SP(tproj_id)
+function SP()
 {
-  var action_url = fRoot+menuUrl+"?tproject_id="+parseInt(tproj_id);
-  parent.workframe.location = action_url+args;
+  var action_url = fRoot+menuUrl;
+  parent.workframe.location = action_url;
 }
 
 /**
  *  EXecution DaShboard (EXDS)
  */
-function EXDS(tproject_id,tplan_id) {
-  var action_url = fRoot+'lib/execute/execDashboard.php'+
-                   '?tproject_id='+tproject_id;
-  if (typeof tplan_id != 'undefined'){
-     action_url +='&tplan_id='+tplan_id;
-  }                  
-  action_url += args;
+function EXDS() {
+  var action_url = fRoot+'lib/execute/execDashboard.php';
   parent.workframe.location = action_url;
 }
 
@@ -191,8 +186,7 @@ function EP(id) {
   // get checkboxes status
   var pParams = tree_getPrintPreferences();
   var action_url = fRoot+menuUrl+"?print_scope=test_specification" + "&edit=testproject" +
-                   "&level=testproject&containerType=testproject&id="+id+
-                   "&caller=EP&tproject_id="+id+ args+"&"+pParams;
+                   "&level=testproject&containerType=testproject&id="+id+args+"&"+pParams;
 
   // alert(_FUNCTION_NAME_ + " " +action_url);
                  
@@ -208,22 +202,19 @@ function EP(id) {
 
   rev :
 */
-function ETS(tproj_id,id) {
-  // menuUrl => archiveData.php
-  // menuUrl => lib/plan/planAddTC.php
-  
+function ETS(id) {
+  // menuUrl 99% => archiveData.php
+
   // get checkboxes status
   var _FUNCTION_NAME_="ETS";
   var pParams = tree_getPrintPreferences();
   var action_url=fRoot+menuUrl+"?print_scope=test_specification" +
-                 "&edit=testsuite&level=testsuite" +
-                 "&caller=ETS"+
-                 "&containerType=testsuite&id=" + id + 
-                 "&tproject_id=" + tproj_id + args+"&"+pParams;
+                 "&edit=testsuite&level=testsuite&" + 
+                 "containerType=testsuite&id="+id+args+"&"+pParams;
 
-  //alert(_FUNCTION_NAME_ + " " +action_url);
-  console.log(_FUNCTION_NAME_ + " " +action_url);
+  // alert(_FUNCTION_NAME_ + " " +action_url);
   parent.workframe.location = action_url;
+
 }
 
 /*
@@ -234,17 +225,11 @@ function ETS(tproj_id,id) {
   returns:
 
 */
-function ET(tproj_id,id,v)
+function ET(id,v)
 {
   // get checkboxes status
   var _FUNCTION_NAME_="ET";
-  if(v == undefined) {
-    v = -1;
-  }
-  var my_location = fRoot + menuUrl + 
-      "?version_id="+v+"&edit=testcase&id=" + id +
-       "&caller=ET"+
-      "&tproject_id=" + tproj_id + args;
+  var my_location = fRoot+menuUrl+"?version_id="+v+"&edit=testcase&id="+id+args;
   // alert(_FUNCTION_NAME_ + " " +my_location);
   parent.workframe.location = my_location;
 }
@@ -275,19 +260,15 @@ function TPROJECT_PTC(id)
 function TPROJECT_PTP_RS(id)
 {
   var pParams = tree_getPrintPreferences();
-  parent.workframe.location = fRoot+menuUrl+
-    "?type=reqspec&level=testproject&id="+id+
-    "&tproject_id="+id+args+"&"+pParams;
+  parent.workframe.location = fRoot+menuUrl+"?type=reqspec&level=testproject&id="+id+args+"&"+pParams;
 }
 
 
 /* Generate doc: one Req Spec (with children) */
-function TPROJECT_PRS(tproject_id,id)
+function TPROJECT_PRS(id)
 {
   var pParams = tree_getPrintPreferences();
-  parent.workframe.location = fRoot+menuUrl+
-    "?type=reqspec&level=reqspec&id="+id+
-    "&tproject_id="+tproject_id+args+"&"+pParams;
+  parent.workframe.location = fRoot+menuUrl+"?type=reqspec&level=reqspec&id="+id+args+"&"+pParams;
 }
 
 
@@ -868,8 +849,7 @@ function openAssignmentOverviewWindow(user_id, build_id, tplan_id) {
  * @param tc_id
  */
 function openTCEditWindow(tcase_id,tcversion_id)  {
-  var url = "lib/testcases/archiveData.php?edit=testcase&id=" + 
-            tcase_id + "&tcversion_id=" + tcversion_id;
+  var url = "lib/testcases/archiveData.php?edit=testcase&id=" + tcase_id + "&tcversion_id=" + tcversion_id;
   var width = getCookie("TCEditPopupWidth");
   var height = getCookie("TCEditPopupHeight");
   
@@ -958,9 +938,8 @@ function open_help_window(help_page,locale)
 */
 function openTCaseWindow(tcase_id,tcversion_id,show_mode) {
   var feature_url = "lib/testcases/archiveData.php";
-  feature_url +="?allow_edit=0&show_mode="+show_mode+
-                "&edit=testcase&id="+tcase_id+
-                "&tcversion_id="+tcversion_id+args;;
+  feature_url +="?allow_edit=0&show_mode="+show_mode+"&edit=testcase&id="+
+          tcase_id+"&tcversion_id="+tcversion_id;
 
   var width = getCookie("TCEditPopupWidth");
   var height = getCookie("TCEditPopupHeight");
@@ -1119,8 +1098,12 @@ function openLinkedReqSpecWindow(reqspec_id, anchor)
 
 /*
   function: TPROJECT_REQ_SPEC_MGMT
-            launcher for Testproject REQuirement 
-            SPECifications ManaGeMenT
+            launcher for Testproject REQuirement SPECifications ManaGeMenT
+
+  args:
+
+  returns:
+
 */
 function TPROJECT_REQ_SPEC_MGMT(id)
 {
@@ -1143,15 +1126,13 @@ function TPROJECT_REQ_SPEC_MGMT(id)
   returns:
 
 */
-function REQ_SPEC_MGMT(tproj_id,id)
+function REQ_SPEC_MGMT(id)
 {
   var _FUNCTION_NAME_="REQ_SPEC_MGMT";
   var pParams = tree_getPrintPreferences();
-  var action_url = fRoot+req_spec_manager_url+
-                   "?item=req_spec&tproject_id="+tproj_id+
-                   "&req_spec_id="+id+args+"&"+pParams;
+  var action_url = fRoot+req_spec_manager_url+"?item=req_spec&req_spec_id="+id+args+"&"+pParams;
   
-  //alert(_FUNCTION_NAME_ + " " +action_url);
+  // alert(_FUNCTION_NAME_ + " " +action_url);
   parent.workframe.location = action_url;
 }
 
@@ -1164,13 +1145,11 @@ function REQ_SPEC_MGMT(tproj_id,id)
   returns:
 
 */
-function REQ_MGMT(tproj_id,id)
+function REQ_MGMT(id)
 {
   var _FUNCTION_NAME_="REQ_MGMT";
   var pParams = tree_getPrintPreferences();
-  var action_url = fRoot+req_manager_url+
-                   "?item=requirement&tproject_id="+tproj_id+
-                   "&requirement_id="+id+args+"&"+pParams;
+  var action_url = fRoot+req_manager_url+"?item=requirement&requirement_id="+id+args+"&"+pParams;
 
   //alert(_FUNCTION_NAME_ + " " +action_url);
   parent.workframe.location = action_url;
@@ -1627,21 +1606,11 @@ function openPrintPreview(type, id, child_id, revision, print_action) {
   switch(type) {
 
     case 'req':
-      if( feature_url.indexOf('?') > 0 ) {
-        feature_url += "&";  
-      } else {
-        feature_url += "?";
-      }
-      feature_url += "req_id=" + id + "&req_version_id=" + child_id + "&req_revision=" + revision;
+      feature_url += "?req_id=" + id + "&req_version_id=" + child_id + "&req_revision=" + revision;
     break;
 
     case 'reqSpec':
-      if( feature_url.indexOf('?') > 0 ) {
-        feature_url += "&";  
-      } else {
-        feature_url += "?";
-      }
-      feature_url += "reqspec_id=" + id + "&reqspec_revision_id=" + child_id;
+      feature_url += "?reqspec_id=" + id + "&reqspec_revision_id=" + child_id;
     break;
     
     case 'tc':

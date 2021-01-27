@@ -13,7 +13,7 @@
  * @filesource  planImport.php
  * @package     TestLink
  * @author      Francisco Mancardi
- * @copyright   2003-2019, TestLink community 
+ * @copyright   2003-2014, TestLink community 
  * @link        http://testlink.sourceforge.net/
  * 
  * @internal revisions
@@ -27,7 +27,7 @@ testlinkInitPage($db);
 $templateCfg = templateConfiguration();
 
 $tplan_mgr = new testplan($db);
-$args = init_args($db);
+$args = init_args();
 $gui = initializeGui($args,$tplan_mgr);
 $dest_common = TL_TEMP_PATH . session_id(). "-planImport" ;
 $dest_files = array('XML' => $dest_common . ".xml");
@@ -98,21 +98,32 @@ if ($args->do_upload)
   }
 }
 
-$gui->testprojectName = testproject::getName($db,$args->tproject_id);
+$gui->testprojectName = $_SESSION['testprojectName'];
 $gui->importTypes = $tplan_mgr->get_import_file_types();
 
 $smarty = new TLSmarty();
 $smarty->assign('gui',$gui);  
 $smarty->display($templateCfg->template_dir . $templateCfg->default_template);
 
+/**
+ * called magically by TL to check if user trying to use this feature
+ * has enough rights.
+ *
+ */
+function checkRights(&$db,&$user)
+{
+  return $user->hasRight($db,'mgt_testplan_create');
+}
 
 /**
  * process input data, creating a kind of namespace
  *
  * @global array _REQUEST
  *
+ * @internal Revisions
+ * 20101017 - franciscom - creation
  */
-function init_args(&$dbH)
+function init_args()
 {
   $args = new stdClass();
   $_REQUEST = strings_stripSlashes($_REQUEST);
@@ -122,42 +133,9 @@ function init_args(&$dbH)
   $args->do_upload = isset($_REQUEST['uploadFile']) ? 1 : 0;
     
   $args->userID = intval($_SESSION['userID']);
-
-  $kp = array('tplan_id','itemID');
-  foreach ($kp as $ktp) {
-    $args->tplan_id = isset($_REQUEST[$ktp]) ? intval($_REQUEST[$ktp]) : 0;    
-  }
-
-  if ($args->tplan_id==0) {
-    $args->tplan_id = $args->itemID;
-  }
-
-  if ($args->itemID !=0) {
-    if ($args->tplan_id != $args->itemID) {
-      $args->tplan_id = $args->itemID;
-    }
-  }  
-
-  if ($args->tplan_id==0) {
-    throw new Exception("Error Test Plan ID", 1);
-  }
-
-  $tplan = new testplan($dbH);
-  $info = $tplan->get_by_id($args->tplan_id);
-  $args->tproject_id = $info['testproject_id'];
-
-
-  // ----------------------------------------------------------------
-  // Feature Access Check
-  // This feature is affected only for right at Test Project Level
-  $env = array()
-  $env['script'] = basename(__FILE__);
-  $env['tproject_id'] = $args->tproject_id;
-  $args->user->checkGUISecurityClearance($dbH,$env,
-                    array('mgt_testplan_create'),'and');
-  // ----------------------------------------------------------------
-
-  
+  $args->tproject_id = $_SESSION['testprojectID'];
+  $args->tplan_id = isset($_REQUEST['tplan_id']) ? intval($_REQUEST['tplan_id']) : 0;
+    
   return $args;
 }
 
@@ -255,17 +233,13 @@ function importTestPlanLinksFromXML(&$dbHandler,&$tplanMgr,$targetFile,$contextO
     //
     // I will try to link the platforms if are defined
     $status_ok = true;
-    if( property_exists($xml,'platforms') )
-    {
+    if (property_exists($xml,'platforms')) {
       $platformMgr = new tlPlatform($dbHandler,$contextObj->tproject_id); 
       $platformUniverse = $platformMgr->getAllAsMap();
-      if( is_null($platformUniverse) )
-      {
+      if (is_null($platformUniverse)) {
         $status_ok = false;
         $msg[] = array($labels['no_platforms_on_tproject'],$labels['not_imported']);
-      }
-      else
-      {
+      } else {
         $platformUniverse = array_flip($platformUniverse);
         $op = processPlatforms($platformMgr,$tplanMgr,$platformUniverse,$xml->platforms,
                      $labels,$contextObj->tplan_id);
@@ -478,6 +452,12 @@ function importTestPlanLinksFromXML(&$dbHandler,&$tplanMgr,$targetFile,$contextO
           {
             $msg[] = array(sprintf($labels['tcase_doesnot_exist'],$externalID,$tprojectInfo['name']));
           }
+          //$tcaseMgr->get_by_external
+              
+          // echo '<pre><xmp>';
+          // var_dump($xmlLinks[$idx]->testcase);
+          // echo 'TCBAME' . (string)$xmlLinks[$idx]->testcase->name;     
+          // echo '</xmp></pre>';
         }
       
       } 

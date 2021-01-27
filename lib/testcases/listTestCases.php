@@ -3,9 +3,12 @@
  * TestLink Open Source Project - http://testlink.sourceforge.net/
  *
  * @filesource listTestCases.php
+ * @author     Martin Havlat
  *
  * Generates tree menu with test specification.
  *
+ * @internal revisions
+ * @since 1.9.10
  */
 require_once('../../config.inc.php');
 require_once("common.php");
@@ -37,8 +40,6 @@ $smarty->display($templateCfg->template_dir . 'tcTree.tpl');
 function initializeGui(&$dbHandler, &$control) 
 {
   $gui = new stdClass();
-
-  $gui->tproject_id = $control->args->testproject_id;
   $gui->feature = $control->args->feature;
   $gui->treeHeader = lang_get('title_navigator'). ' - ' . lang_get('title_test_spec');
 

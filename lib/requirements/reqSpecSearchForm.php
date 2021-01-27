@@ -23,7 +23,7 @@ testlinkInitPage($db);
 $templateCfg = templateConfiguration();
 $tproject_mgr = new testproject($db);
 
-$args = init_args($db);
+$args = init_args();
 $gui = new stdClass();
 $gui->tcasePrefix = '';
  
@@ -55,11 +55,12 @@ $smarty->display($templateCfg->template_dir . 'reqSpecSearchForm.tpl');
   returns: 
 
 */
-function init_args(&$dbH)
+function init_args()
 {              
-  $args = new stdClass();
-  $args->tprojectID = $args->tproject_id;
-  $args->tprojectName = testproject::getName($dbH,$args->tproject_id);
+  	$args = new stdClass();
+    $args->tprojectID = isset($_SESSION['testprojectID']) ? $_SESSION['testprojectID'] : 0;
+    $args->tprojectName = isset($_SESSION['testprojectName']) ? $_SESSION['testprojectName'] : 0;
        
-  return $args;
+    return $args;
 }
+?>

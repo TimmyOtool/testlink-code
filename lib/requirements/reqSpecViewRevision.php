@@ -19,7 +19,7 @@ testlinkInitPage($db,false,false,"checkRights");
 
 $templateCfg = templateConfiguration();
 
-$args = init_args($db);
+$args = init_args();
 $gui = initialize_gui($db,$args);
 $smarty = new TLSmarty();
 
@@ -29,15 +29,16 @@ $smarty->display($templateCfg->template_dir . 'reqSpecViewRevision.tpl');
 /**
  *
  */
-function init_args(&$dbH)
+function init_args()
 {
   $iParams = array("item_id" => array(tlInputParameter::INT_N),
                "showContextInfo" => array(tlInputParameter::INT_N));  
     
-  list($args,$env) = initContext();
+  $args = new stdClass();
   R_PARAMS($iParams,$args);
   
-  $args->tproject_name = testproject::getName($dbH,$args->tproject_id);
+    $args->tproject_id = isset($_SESSION['testprojectID']) ? $_SESSION['testprojectID'] : 0;
+    $args->tproject_name = isset($_SESSION['testprojectName']) ? $_SESSION['testprojectName'] : null;
     $user = $_SESSION['currentUser'];
   $args->userID = $user->dbID;
   

@@ -4,7 +4,10 @@
  * This script is distributed under the GNU General Public License 2 or later.
  *
  * @filesource  issueTrackerView.php
+ *
  * @author   francisco.mancardi@gmail.com
+ * @internal revisions
+ * 
  *
 **/
 require_once(dirname(__FILE__) . "/../../config.inc.php");
@@ -13,7 +16,17 @@ require_once("common.php");
 testlinkInitPage($db,false,false,"checkRights");
 $templateCfg = templateConfiguration();
 
-$gui = initEnv($db);
+$issueTrackerMgr = new tlIssueTracker($db);
+
+$gui = new stdClass();
+$args = init_args();
+$gui->items = $issueTrackerMgr->getAll(array('output' => 'add_link_count', 'checkEnv' => true));
+$gui->canManage = $args->currentUser->hasRight($db,"issuetracker_management");
+$gui->user_feedback = $args->user_feedback;
+
+if($args->id > 0) {
+  $gui->items[$args->id]['connection_status'] = $issueTrackerMgr->checkConnection($args->id) ? 'ok' : 'ko'; 
+}
 
 $smarty = new TLSmarty();
 $smarty->assign('gui',$gui);
@@ -24,43 +37,26 @@ $smarty->display($templateCfg->template_dir . $templateCfg->default_template);
 /**
  * @return object returns the arguments for the page
  */
-function init_args($context) {
+function init_args() {
   $args = new stdClass();
-  $args->currentUser = $_SESSION['currentUser']; 
-  $args->user_feedback = array('type' => '', 'message' => '');
-  $args->id = isset($_REQUEST['id']) ? intval($_REQUEST['id']) : 0;
-  $args->tproject_id = $context->tproject_id;
-  $args->tplan_id = $context->tplan_id;
+  $args->tproject_id = isset($_REQUEST['tproject_id']) ? intval($_REQUEST['tproject_id']) : 0;
   
+  $args->currentUser = $_SESSION['currentUser']; 
+  
+  $args->user_feedback = array('type' => '', 'message' => '');
+  
+  // only way I've found in order to give feedback for delete
+  // need to undertand if we really need/want to do all this mess
+  // $args->user_feedback = array('type' => '', 'message' => '');
+  // if( isset($_SESSION['issueTrackerView.user_feedback']) )
+  // {
+  //  $args->user_feedback = array('type' => '', 'message' => $_SESSION['issueTrackerView.user_feedback']);
+  //  unset($_SESSION['issueTrackerView.user_feedback']);
+  // }
+
+  $args->id = isset($_REQUEST['id']) ? intval($_REQUEST['id']) : 0;
   return $args;
 }
-
-/**
- *
- */
-function initEnv(&$dbH) {
-
-  $issueTrackerMgr = new tlIssueTracker($dbH);
-  list($context,$env) = initContext();
-
-  $args = init_args($context);
-
-  list($add2args,$gui) = initUserEnv($dbH,$context);
-  $gui->activeMenu['system'] = 'active';
-  
-  $gui->items = $issueTrackerMgr->getAll(array('output' => 'add_link_count', 'checkEnv' => true));
-
-  $gui->canManage = $args->currentUser->hasRight($dbH,"issuetracker_management");
-
-  $gui->user_feedback = $args->user_feedback;
-
-  if($args->id > 0) {
-    $gui->items[$args->id]['connection_status'] = $issueTrackerMgr->checkConnection($args->id) ? 'ok' : 'ko'; 
-  }
-  return $gui;
-}
-
-
 
 /**
  *

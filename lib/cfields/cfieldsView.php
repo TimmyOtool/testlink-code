@@ -10,13 +10,11 @@ require_once(dirname(__FILE__) . "/../../config.inc.php");
 require_once("common.php");
 
 testlinkInitPage($db,false,false,"checkRights");
+$gui = new stdClass();
 $templateCfg = templateConfiguration();
 
 $cfield_mgr = new cfield_mgr($db);
-list($context,$env) = initContext();
-$gui = $cfield_mgr->initViewGUI($context,$env);
-$gui->activeMenu['system'] = 'active';
-
+$gui = $cfield_mgr->initViewGUI();
 
 $smarty = new TLSmarty();
 $smarty->assign('gui',$gui);

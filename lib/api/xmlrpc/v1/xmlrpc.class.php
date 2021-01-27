@@ -1640,7 +1640,7 @@ class TestlinkXMLRPCServer extends IXR_Server {
                     }
                 }
 
-                $bm = new build( $this->dbObj );
+                $bm = new build_mgr( $this->dbObj );
                 $insertID = $bm->create( $testPlanID, $buildName, $buildNotes, $opt[self::$activeParamName], $opt[self::$openParamName], $opt[self::$releaseDateParamName] );
 
                 if($insertID > 0) {
@@ -8130,7 +8130,7 @@ class TestlinkXMLRPCServer extends IXR_Server {
 
         if($status_ok) {
             // Get Test Plan ID from Build ID in order to check rights
-            $bm = new build( $this->dbObj );
+            $bm = new build_mgr( $this->dbObj );
 
             $buildID = intval( $this->args[self::$buildIDParamName] );
             $opx = array(
