@@ -3,11 +3,14 @@
  * TestLink Open Source Project - http://testlink.sourceforge.net/
  * This script is distributed under the GNU General Public License 2 or later. 
  *  
- * @filesource uncoveredTestCases.php
+ * @filesource $RCSfile: uncoveredTestCases.php,v $
+ * @version $Revision: 1.8 $
+ * @modified $Date: 2009/09/28 08:44:20 $ by $Author: franciscom $
  * @author Francisco Mancardi - francisco.mancardi@gmail.com
  * 
  * For a test project, list test cases that has no requirement assigned
  * 
+ * rev: 20081109 - franciscom - BUGID 512
  *
  */
 require_once("../../config.inc.php");
@@ -19,7 +22,7 @@ $templateCfg = templateConfiguration();
 
 $tables = tlObjectWithDB::getDBTables(array('req_coverage','nodes_hierarchy',
                                             'tcversions','node_types'));
-$args = init_args($db);
+$args = init_args();
 $tproject_mgr = new testproject($db);
 
 // get list of available Req Specification
@@ -103,23 +106,14 @@ $smarty = new TLSmarty();
 $smarty->assign('gui', $gui);
 $smarty->display($templateCfg->template_dir . $templateCfg->default_template);
 
-/**
- *
- */
-function init_args(&$dbHandler)
+
+function init_args()
 {
-  list($args,$env) = initContext();
-
-  if ($args->tproject_id == 0 && $args->tplan_id >0) {
-    $tplan = new testplan($dbHandler);
-    $nn = $tplan->get_by_id($args->tplan_id);
-    $args->tproject_id = $nn['testproject_id'];    
-  }
-
-  $args->tproject_name = 
-    testproject::getName($dbHandler,$args->tproject_id)
-
-  return $args;
+	$args = new stdClass();
+    $args->tproject_id = isset($_SESSION['testprojectID']) ? $_SESSION['testprojectID'] : 0;
+    $args->tproject_name = isset($_SESSION['testprojectName']) ? $_SESSION['testprojectName'] : '';
+    
+    return $args;
 }
 
 function checkRights(&$db,&$user)

@@ -123,28 +123,18 @@ class mantis {
     curl_setopt_array($this->curl,$curlCfg);
   }
 
-function isValidJSON($string) {
-    json_decode($string);
-    return (json_last_error() == JSON_ERROR_NONE);
-}
-
   /**
    * 
    *
    */
   function getIssue($issueID) {
     try {
-      $item = $this->_get("/api/rest/issues/{$issueID}");  
+      $item = $this->_get("/api/rest/issues/{$issueID}");    
       $ret = is_object($item) ? $item : null;
       return $ret;
     }
     catch(Exception $e) {
-      tLog(__METHOD__ . '/' . $e->getMessage(),'ERROR');
-
-      $exu = new stdClass();
-      $exu->exception = true;
-      $exu->reason = $e->getMessage();
-      return $exu;
+      return null;
     }
   } 
 
@@ -153,36 +143,82 @@ function isValidJSON($string) {
    *
    */
   public function addIssue($title, $descr, $opt=null) {
-  }
 
-  /**
-   * 
-   *
-   */
-  public function addNote($issueID, $noteText) {
-  }
-  
-  /**
-   * 
-   *
-   */
-  function addExternalLinks($issueID, $links) {
-  }
+    // Limit title length
+    $ellipsis = '...';
+    $safeTitle = $title;
+    $titleLen = strlen($title);
+    if( $titleLen > $this->summaryLengthLimit ) {
+      $safeTitle = $ellipsis . 
+        substr($title, -1*($this->summaryLengthLimit + strlen($ellipsis)));
+    }
 
-  /**
-   * 
-   *
-   */
-  function addTags($issueID, $tags) {
-  }
+    $url = '/cards';
+    $body = [
+      'title' => $safeTitle,
+      'description' => $descr,
+      'board_id' => (int)$this->boardId,
+    ];
 
-  /**
-   * 
-   *
-   */
-  public function addLink($issueID, $link, $opt=null) {
-    $url = "/api/rest/index.php/plugins/TestSpec/add/{$issueID}";
-    $op = $this->_request_json('POST',$url, $link);
+    $options = array('int' => array(),'string' => array(),
+                     'bool' => array());
+
+    $options['bool'] = ['asap' => 'asap'];
+
+    $options['int'] = [
+      'columnid' => 'column_id',
+      'laneid' => 'lane_id',
+      'ownerid' => 'owner_id',
+      'typeid' => 'type_id',
+      'sortorder' => 'sort_order',
+      'position' => 'position'
+    ];
+
+    $options['string'] = [
+      'sizetext' => 'size_text', 
+      'businessvalue' => 'business_value'
+    ];
+
+    if( property_exists($this->cfg,'setcardowneremail') &&
+        $this->cfg->setcardowneremail ) {
+      $options['string']['reporter_email'] = 'owner_email';
+    }
+
+    foreach ($options as $optType => $elem) {
+      foreach ($elem as $key => $name) {
+        $doSetValue = false;
+        if( !empty($this->options[$key]) ) {
+          $value = $this->options[$key];
+          $doSetValue = true;
+        }
+        if( null != $opt && property_exists($opt,$key) && 
+            !empty( $opt->$key ) ) {
+          $value = $opt->$key;
+          $doSetValue = true;
+        }
+
+        if( $doSetValue == false ) {
+          continue;
+        }
+
+        switch($optType) {
+          case 'int':
+            $body[$name] = (int)$value;
+          break;
+
+          case 'string':
+            $body[$name] = (string)$value;
+          break;
+
+          case 'bool':
+            $body[$name] = (bool)$value;
+          break;
+        }
+      }
+    }
+
+    $op = $this->_request_json('POST',$url, $body);
+
     return $op;
   }
 
@@ -190,9 +226,42 @@ function isValidJSON($string) {
    * 
    *
    */
-  public function removeLink($issueID, $link, $opt=null) {
-    $url = "/api/rest/index.php/plugins/TestSpec/remove/{$issueID}";
-    $op = $this->_request_json('POST',$url, $link);
+  public function addNote($issueID, $noteText) {
+    $url = "/cards/{$issueID}/comments";
+    $body = [ 'text' => $noteText ];
+    $op = $this->_request_json('POST',$url,$body);
+    return $op;
+  }
+  
+  /**
+   * 
+   *
+   */
+  function addExternalLinks($cardID, $links) {
+    $url = "/cards/{$cardID}/external-links";
+    $op = null;
+    foreach ($links as $link) {
+      $op = $this->_request_json('POST',$url,$link);
+      if (is_null($op)) {
+        break;
+      }
+    }
+    return $op;
+  }
+
+  /**
+   * 
+   *
+   */
+  function addTags($cardID, $tags) {
+    $url = "/cards/{$cardID}/tags";
+    $op = null;
+    foreach ($tags as $tag) {
+      $op = $this->_request_json('POST',$url,$tag);
+      if (is_null($op)) {
+        break;
+      }
+    }
     return $op;
   }
 
@@ -228,23 +297,8 @@ function isValidJSON($string) {
   protected function _request_json($method, $url, $body = NULL, $ignore_status = 0,$reporter=null) {
     $r = $this->_request($method, $url, $body, $ignore_status,$reporter);
     $response = $r['response'];
-    $r['content'] = trim($r['content']);
-    $content = json_decode($r['content']);
-    if (json_last_error() == JSON_ERROR_NONE) {
-      return $content;
-    }
-    
-    tLog(__METHOD__ . '/Content:' 
-         . $r['content'],'ERROR');
-
-    $msg = 'Bad Response!!';
-    if (null != $response && isset($response['http_code'])) {
-      $msg = "http_code:" . $response['http_code'];
-    }
-    $msg = "Error Parsing JSON -> " . $msg . 
-           " -> Give a look to TestLink Event Viewer";
-
-    throw new Exception($msg, 1);
+    $content = $r['content'];
+    return ($content != '' ? json_decode($content) : null);
   }
   
  /** 
@@ -306,10 +360,7 @@ function isValidJSON($string) {
                           json_encode($response) . ' - content: ' . json_encode($content) );
     }
     
-    $rr = ['content' => $content,
-           'response' => $response,
-           'curlError' => $curlError];
-    
+    $rr = ['content' => $content,'response' => $response,'curlError' => $curlError];
     return $rr;
   }
   

@@ -7,6 +7,11 @@
  * 
  * @filesource	resultsMoreBuilds.php
  * @package 	TestLink
+ * @author		Kevin Levy <kevinlevy@users.sourceforge.net>
+ * @copyright 	2009,2012 TestLink community 
+ *
+ * @internal revisions
+ * @since 1.9.4
  * 
  **/
 require_once('../../config.inc.php');
@@ -18,7 +23,7 @@ testlinkInitPage($db,false,false,"checkRights");
 $templateCfg = templateConfiguration();
 $date_format_cfg = config_get('date_format');
 
-$args = init_args($db);
+$args = init_args();
 $gui = initializeGui($db,$args,$date_format_cfg);
 $mailCfg = buildMailCfg($gui);
 
@@ -210,12 +215,11 @@ function initializeGui(&$dbHandler,&$argsObj,$dateFormat)
 /**
  * Initialize input data
  */
-function init_args(&$dbHandler)
+function init_args()
 {
 	$iParams = array("format" => array(tlInputParameter::INT_N),
 					 "report_type" => array(tlInputParameter::INT_N),
 					 "tplan_id" => array(tlInputParameter::INT_N),
-           "tproject_id" => array(tlInputParameter::INT_N),
 					 "build" => array(tlInputParameter::ARRAY_INT),
 					 "platform" => array(tlInputParameter::ARRAY_INT),
 					 "keyword" => array(tlInputParameter::INT_N),
@@ -238,32 +242,25 @@ function init_args(&$dbHandler)
 	$args->report_type = $pParams["report_type"];
 	$args->tplan_id = $pParams["tplan_id"];
 	
-  if ($args->tproject_id == 0 && $args->tplan_id >0) {
-    $tplan = new testplan($dbHandler);
-    $nn = $tplan->get_by_id($args->tplan_id);
-    $args->tproject_id = $nn['testproject_id'];    
-  }
-
-
-
+	$args->tproject_id = isset($_SESSION['testprojectID']) ? $_SESSION['testprojectID'] : 0;
     
-  $args->display = new stdClass();
-  $args->display->suite_summaries = $pParams["display_suite_summaries"];
-  $args->display->totals = $pParams["display_totals"];    
-  $args->display->query_params = $pParams["display_query_params"];
-  $args->display->test_cases = $pParams["display_test_cases"];
-  $args->display->latest_results = $pParams["display_latest_results"];
+    $args->display = new stdClass();
+    $args->display->suite_summaries = $pParams["display_suite_summaries"];
+    $args->display->totals = $pParams["display_totals"];    
+    $args->display->query_params = $pParams["display_query_params"];
+    $args->display->test_cases = $pParams["display_test_cases"];
+    $args->display->latest_results = $pParams["display_latest_results"];
     
-  $args->lastStatus = $pParams["lastStatus"] ? $pParams["lastStatus"] : array();
-  $args->keywordSelected = $pParams["keyword"];
-  $args->ownerSelected = $pParams["owner"];
-  $args->executorSelected = $pParams["executor"];
-  $args->buildsSelected = $pParams["build"] ? $pParams["build"] : array();
-  $args->platformsSelected = $pParams["platform"] ? $pParams["platform"] : array();
-  $args->testsuitesSelected = $pParams["testsuite"] ? $pParams["testsuite"] : array();
-  $args->search_notes_string = $pParams['search_notes_string'];
+    $args->lastStatus = $pParams["lastStatus"] ? $pParams["lastStatus"] : array();
+    $args->keywordSelected = $pParams["keyword"];
+    $args->ownerSelected = $pParams["owner"];
+    $args->executorSelected = $pParams["executor"];
+    $args->buildsSelected = $pParams["build"] ? $pParams["build"] : array();
+    $args->platformsSelected = $pParams["platform"] ? $pParams["platform"] : array();
+    $args->testsuitesSelected = $pParams["testsuite"] ? $pParams["testsuite"] : array();
+    $args->search_notes_string = $pParams['search_notes_string'];
 
-  return $args;  
+    return $args;  
 }
 
 

@@ -11,15 +11,15 @@ require_once("../../config.inc.php");
 require_once("common.php");
 testlinkInitPage($db,false,false,"checkRights");
 
-$tplCfg = templateConfiguration();
+$templateCfg = templateConfiguration();
 $args = init_args();
 
 $platform_mgr = new tlPlatform($db, $args->tproject_id);
-$gui = $platform_mgr->initViewGui($args->currentUser,$args);	  
+$gui = $platform_mgr->initViewGui($args->currentUser);	  
 
 $smarty = new TLSmarty();
 $smarty->assign('gui',$gui);
-$smarty->display($tplCfg->tpl);
+$smarty->display($templateCfg->template_dir . $templateCfg->default_template);
 
 
 /**
@@ -28,15 +28,13 @@ $smarty->display($tplCfg->tpl);
  */
 function init_args() {
 	$args = new stdClass();
-	$args->currentUser = $_SESSION['currentUser']; 
+  $args->tproject_id = isset($_REQUEST['tproject_id']) ? intval($_REQUEST['tproject_id']) : 0;
 
-  list($context,$env) = initContext();
-  $args->tproject_id = $context->tproject_id;
-  $args->tplan_id = $context->tplan_id;
-  
   if( 0 == $args->tproject_id ) {
     throw new Exception("Unable Get Test Project ID => Can Not Proceed", 1);
   }
+
+	$args->currentUser = $_SESSION['currentUser']; 
 
 	return $args;
 }

@@ -9,6 +9,8 @@
  * @filesource  buildCopyExecTaskAssignment.php
  * @link        http://www.testlink.org
  *
+ * @internal revisions
+ * @since 1.9.15
  */
          
 require_once(dirname(__FILE__)."/../../config.inc.php");
@@ -16,14 +18,15 @@ require_once("common.php");
 
 // TODO understand the new model for rights check
 testlinkInitPage($db);
+checkRights($db,$_SESSION['currentUser']);
 
 $tplan_mgr = new testplan($db);
 $assignment_mgr = &$tplan_mgr->assignment_mgr;
-$build_mgr = new build($db);
+$build_mgr = new build_mgr($db);
 
 $templateCfg = templateConfiguration();
 
-$args = init_args($db,$tplan_mgr,$build_mgr);
+$args = init_args($build_mgr);
 $gui = init_gui($db, $args, $tplan_mgr);
 
 switch( $args->doAction )
@@ -51,14 +54,15 @@ $smarty->display($templateCfg->template_dir . $templateCfg->default_template);
 /**
  *
  */
-function init_args(&$dbH,&$tplanMgr,&$buildMgr) 
+function init_args(&$buildMgr) 
 {
   $args = new stdClass();
   
   $_REQUEST = strings_stripSlashes($_REQUEST);
   
   $k2g = array('build_id','source_build_id');
-  foreach($k2g as $key) {
+  foreach($k2g as $key)
+  {
     $args->$key = isset($_REQUEST[$key]) ? intval($_REQUEST[$key]) : 0;
   }  
 
@@ -74,7 +78,8 @@ function init_args(&$dbH,&$tplanMgr,&$buildMgr)
   }
 
   // Fatal checks
-  if( $args->build_id <= 0 ) {
+  if( $args->build_id <= 0 )
+  {
     throw new Exception("Error Processing Request - Target build is not set", 1);
   }  
 
@@ -82,27 +87,12 @@ function init_args(&$dbH,&$tplanMgr,&$buildMgr)
   $bi = $buildMgr->get_by_id($args->build_id);
   $args->tplan_id = $bi['testplan_id'];
 
-  // Get test project id from test plan
-  $pli = $tplanMgr->get_by_id($args->plan_id);
-  $args->tproject_id = $pli['testproject_id'];
-
-  $args->confirmed = isset($_REQUEST['confirmed']) 
-                     && $_REQUEST['confirmed'] == 'yes' ? true : false;
+  $args->confirmed = isset($_REQUEST['confirmed']) && $_REQUEST['confirmed'] == 'yes' ? true : false;
   
   
   $args->refreshTree = false;
   $args->currentUser = $_SESSION['currentUser'];
   $args->user_id = $_SESSION['userID'];
-
-  // ----------------------------------------------------------------
-  // Feature Access Check
-  $env = array()
-  $env['script'] = basename(__FILE__);
-  $env['tproject_id'] = $args->tproject_id;
-  $env['tplan_id'] = $args->tplan_id;
-  $args->user->checkGUISecurityClearance(dbHandler,$env,
-                    array('testplan_planning'),'and');
-  // ----------------------------------------------------------------
 
   return $args;
 }
@@ -172,3 +162,14 @@ function getBuildDomainForGUI(&$tplanMgr, &$argsObj)
   
   return $htmlMenu;
 } 
+
+/**
+ *
+ */
+function checkRights(&$dbHandler,&$user) 
+{
+  if( !$user->hasRight($dbHandler, 'testplan_planning') )
+  {
+    exit();
+  }  
+}

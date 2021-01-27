@@ -3,26 +3,22 @@
  * TestLink Open Source Project - http://testlink.sourceforge.net/
  * This script is distributed under the GNU General Public License 2 or later. 
  *
- * @package		  TestLink
- * @author		  Andreas Simon
- * @copyright	  2005-2019, TestLink community 
- * @filesource	tc_exec_unassign_all.php
- * @link		http://www.testlink.org/ 
- * 
+ * @package		TestLink
+ * @copyright	2005-2019, TestLink community 
  * 
  */
 
 require_once(dirname(__FILE__)."/../../config.inc.php");
 require_once("common.php");
 
-testlinkInitPage($db);
+testlinkInitPage($db, false, false, "checkRights");
 
 $assignment_mgr = new assignment_mgr($db);
 $testplan_mgr = new testplan($db);
-$build_mgr = new build($db);
+$build_mgr = new build_mgr($db);
 $templateCfg = templateConfiguration();
 
-$args = init_args($db);
+$args = init_args();
 $gui = init_gui($db, $args);
 
 $assignment_count = 0;
@@ -62,35 +58,22 @@ $smarty->display($templateCfg->template_dir . $templateCfg->default_template);
 /**
  *
  */
-function init_args(&$dbH) {
+function init_args() {
 	
-	list($args,$env) = initContext();
+	$args = new stdClass();
 	
 	$_REQUEST = strings_stripSlashes($_REQUEST);
 	
-	$args->build_id = isset($_REQUEST['build_id']) ? $_REQUEST['build_id'] : 0;
+	$args->build_id = isset($_REQUEST['build_id']) ? 
+	                  intval($_REQUEST['build_id']) : 0;
 	$args->confirmed = isset($_REQUEST['confirmed']) && $_REQUEST['confirmed'] == 'yes' ? true : false;
 	
 	$args->user_id = $_SESSION['userID'];
-	$args->user = $_SESSION['currentUser'];
-
-	$args->testproject_id = $args->tproject_id;
-	$args->testproject_name = testproject::getName($dbH,$args->tproject_id);
+	$args->testproject_id = intval($_SESSION['testprojectID']);
+	$args->testproject_name = $_SESSION['testprojectName'];
 	
 	$args->refreshTree = isset($_SESSION['setting_refresh_tree_on_action']) ?
 	                     $_SESSION['setting_refresh_tree_on_action'] : false;
-
-
-  // ----------------------------------------------------------------
-  // Feature Access Check
-  // This feature is affected only for right at Test Project Level
-  $env = array()
-  $env['script'] = basename(__FILE__);
-  $env['tproject_id'] = $args->tproject_id;
-  $env['tplan_id'] = $args->tplan_id;
-  $args->user->checkGUISecurityClearance($dbH,$env,
-                    array('exec_assign_testcases'),'and');
-  // ----------------------------------------------------------------
 	
 	return $args;
 }
@@ -115,3 +98,13 @@ function init_gui(&$dbHandler, &$argsObj) {
 	
 	return $gui;
 }
+
+
+/**
+ *
+ */
+function checkRights(&$dbHandler,&$user) {
+	return $user->hasRight($dbHandler, 'testplan_planning');
+}
+
+?>

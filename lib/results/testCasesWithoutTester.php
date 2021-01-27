@@ -7,6 +7,8 @@
  * 
  * For a test plan, list test cases that HAS NOT BEEN RUN AND HAS NO TESTER ASSIGNED
  *
+ * @internal revisions
+ * @since 1.9.12
  *
  */
 require_once("../../config.inc.php");
@@ -142,19 +144,23 @@ function buildTable($data, $tproject_id, $show_platforms, $priorityMgmtEnabled)
 */
 function init_args(&$tplan_mgr)
 {
-  list($args,$env) = initContext();
-      
-  $args->show_platforms = false;
-  if ($args->tproject_id == 0 && $args->tplan_id >0) {
-    $tplan = new testplan($tplan_mgr->db);
-    $nn = $tplan->get_by_id($args->tplan_id);
-    $args->tproject_id = $nn['testproject_id'];    
-  }
+  $iParams = array("format" => array(tlInputParameter::INT_N),
+                   "tplan_id" => array(tlInputParameter::INT_N));
 
-  $args->tproject_name = 
-    testproject::getName($tplan_mgr->db,$args->tproject_id);
+  $args = new stdClass();
+  R_PARAMS($iParams,$args);
+    
+  $args->show_platforms = false;
+  $args->tproject_id = intval(isset($_SESSION['testprojectID']) ? $_SESSION['testprojectID'] : 0);
+
+  $args->tplan_name = '';
+  if(!$args->tplan_id)
+  {
+    $args->tplan_id = intval(isset($_SESSION['testplanID']) ? $_SESSION['testplanID'] : 0);
+  }
   
-  if($args->tplan_id > 0) {
+  if($args->tplan_id > 0)
+  {
     $tplan_info = $tplan_mgr->get_by_id($args->tplan_id);
     $args->tplan_name = $tplan_info['name'];  
     $args->show_platforms = $tplan_mgr->hasLinkedPlatforms($args->tplan_id);

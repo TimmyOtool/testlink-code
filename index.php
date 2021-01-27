@@ -5,7 +5,7 @@
  *
  * @filesource  index.php
  * @package     TestLink
- * @copyright   2006-2019, TestLink community
+ * @copyright   2006-2017, TestLink community
  * @link        http://www.testlink.org
  *
  *
@@ -14,13 +14,12 @@ require_once('lib/functions/configCheck.php');
 checkConfiguration();
 require_once('config.inc.php');
 require_once('common.php');
-
 doSessionStart();
 
 // will be very interesting understand why we do this
 unset($_SESSION['basehref']);  
 setPaths();
-$args = initArgs();
+list($args,$gui) = initEnv();
 
 // verify the session during a work
 $redir2login = true;
@@ -31,8 +30,8 @@ if( isset($_SESSION['currentUser']) ) {
   $redir2login = is_null($securityCookie);
 
   if(!$redir2login) {
+    // need to get fresh info from db, before asking for securityCookie
     doDBConnect($db,database::ONERROREXIT);
-
     $user = new tlUser();
     $user->dbID = $_SESSION['currentUser']->dbID;
     $user->readFromDB($db);
@@ -65,23 +64,21 @@ if($redir2login) {
 // Calling testlinkInitPage() I'm doing what we do on navBar.php
 // navBar.php is called via main.tpl
 // testlinkInitPage($db,('initProject' == 'initProject'));
-$gui = initGui($db,$args);
 
 $tplEngine = new TLSmarty();
 $tplEngine->assign('gui', $gui);
-$tplEngine->display('../dashio/main.tpl');
+$tplEngine->display('main.tpl');
+
 
 /**
  *
+ *
  */
-function initArgs() {
-  $iParams = array(
-              "reqURI" => array(tlInputParameter::STRING_N,0,4000),
-              "action" => array(tlInputParameter::STRING_N,1,15));
+function initEnv() {
+  $iParams = array("reqURI" => array(tlInputParameter::STRING_N,0,4000));
+  $pParams = G_PARAMS($iParams);
   
   $args = new stdClass();
-  R_PARAMS($iParams,$args);
-  $args->user = $_SESSION['currentUser'];
   $args->ssodisable = getSSODisable();
 
   // CWE-79: 
@@ -89,7 +86,9 @@ function initArgs() {
   // During Web Page Generation ('Cross-site Scripting')
   // 
   // https://cxsecurity.com/issue/WLB-2019110139
-  if ($args->reqURI != '') {
+  $args->reqURI = '';
+  if ($pParams["reqURI"] != '') {
+    $args->reqURI = $pParams["reqURI"];
 
     // some sanity checks
     // strpos ( string $haystack , mixed $needle
@@ -103,51 +102,21 @@ function initArgs() {
   $args->reqURI = $_SESSION['basehref'] . $args->reqURI;
 
 
-  $k2l = array('tproject_id','current_tproject_id','tplan_id'); 
-  foreach($k2l as $pp) {
-    $args->$pp = isset($_REQUEST[$pp]) ? intval($_REQUEST[$pp]) : 0;
-  } 
 
-  return $args;
-}
+  $args->tproject_id = isset($_REQUEST['tproject_id']) ? intval($_REQUEST['tproject_id']) : 0;
+  $args->tplan_id = isset($_REQUEST['tplan_id']) ? intval($_REQUEST['tplan_id']) : 0;
 
-/**
- *
- *
- */
-function initGui(&$dbH,&$argsObj) {
-
-  list($add2args,$gui,$tprojMgr) = initUserEnv($dbH,$argsObj);
- 
-  $gui->action = $argsObj->action;
+  $gui = new stdClass();
   $gui->title = lang_get('main_page_title');
+  $gui->mainframe = $args->reqURI;
   $gui->navbar_height = config_get('navbar_height');
 
-  $sso = ($argsObj->ssodisable ? '&ssodisable' : '');
-
-  $gui->logout = 'logout.php?viewer=' . $sso;
-  $gui->current_tproject_id = $argsObj->current_tproject_id;
-  if( $argsObj->current_tproject_id == 0 ) {
-    $gui->current_tproject_id = $argsObj->tproject_id;
-  }
-  
-  $gui->tproject_id = $argsObj->tproject_id;
-  $gui->tplan_id = $argsObj->tplan_id;
-
+  $sso = ($args->ssodisable ? '&ssodisable' : '');
   $gui->titleframe = "lib/general/navBar.php?" . 
-                     "tproject_id={$gui->tproject_id}&" .
-                     "tplan_id={$gui->tplan_id}&" .
+                     "tproject_id={$args->tproject_id}&" .
+                     "tplan_id={$args->tplan_id}&" .
                      "updateMainPage=1" . $sso;
+  $gui->logout = 'logout.php?viewer=' . $sso;
 
-
-  $gui->mainframe = $argsObj->reqURI;
-  if( strpos($gui->mainframe,'?') !== FALSE ) {
-    $gui->mainframe .= "&";
-  } else {
-    $gui->mainframe .= "?";    
-  }
-  $gui->mainframe .= "tproject_id={$gui->tproject_id}&" .
-                     "tplan_id={$gui->tplan_id}";    
-
-  return $gui;
+  return array($args,$gui);
 }

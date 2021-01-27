@@ -122,12 +122,6 @@ function init_args($whiteList) {
 
   $args->currentUser = $_SESSION['currentUser'];
 
-  list($context,$env) = initContext();
-  $args->tproject_id = $context->tproject_id;
-  $args->tplan_id = $context->tplan_id;
-   
- 
-
   return $args;
 }
 
@@ -137,10 +131,7 @@ function init_args($whiteList) {
  *
  */
 function initializeGui(&$dbHandler,&$argsObj,&$commandMgr) {
-  
-  list($add2args,$gui) = initUserEnv($dbHandler,$argsObj);
-  $gui->activeMenu['system'] = 'active';
-
+  $gui = new stdClass();
   $gui->main_descr = '';
   $gui->action_descr = '';
   $gui->user_feedback = array('type' => '', 'message' => '');

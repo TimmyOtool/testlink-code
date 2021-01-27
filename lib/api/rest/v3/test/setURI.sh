@@ -1,1 +1,0 @@
-URI=http://testlink-2-0-0/lib/api/rest/v3/

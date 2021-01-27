@@ -2521,24 +2521,19 @@ function get_requirement_child_by_id_req($id){
    *
    * @used-by 
    */
-  function getFileUploadRelativeURL($id,$tproject_id)
+  function getFileUploadRelativeURL($id)
   {
-    $url = "lib/requirements/reqSpecEdit.php?doAction=" .
-           "fileUpload&req_spec_id=" . intval($id) .
-           "&tproject_id=" . intval($tproject_id);
+    $url = "lib/requirements/reqSpecEdit.php?doAction=fileUpload&req_spec_id=" . intval($id);
     return $url;
-  }  
+  }
 
   /**
    *
    * @used-by 
    */
-  function getDeleteAttachmentRelativeURL($id,$tproject_id)
+  function getDeleteAttachmentRelativeURL($id)
   {
-    $url = "lib/requirements/reqSpecEdit.php" . 
-           "?doAction=deleteFile&req_spec_id=" . intval($id) . 
-           "&tproject_id=" . intval($tproject_id) .
-           "&file_id=" ; 
+    $url = "lib/requirements/reqSpecEdit.php?doAction=deleteFile&req_spec_id=" . intval($id) . "&file_id=" ; 
     return $url;
   }
 

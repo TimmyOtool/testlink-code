@@ -4,18 +4,20 @@
  * This script is distributed under the GNU General Public License 2 or later. 
  *  
  * @filesource  reqImport.php
+ * @author Martin Havlat
  * 
- * Import req specification.
- * Supported Formats: XML
-  
- * Import requirements 
- * Supported Formats:simple CSV, Doors CSV, XML, DocBook
+ * Import ONLY requirements to a req specification. 
+ * Supported: simple CSV, Doors CSV, XML, DocBook
+ *
+ * @internal revisions
+ * since 1.9.12
  *
  */
 require_once("../../config.inc.php");
 require_once("common.php");
 require_once('requirements.inc.php');
 require_once('xml.inc.php');
+require_once('csv.inc.php');
 
 testlinkInitPage($db,false,false,"checkRights");
 
@@ -23,9 +25,10 @@ $templateCfg = templateConfiguration();
 $req_spec_mgr = new requirement_spec_mgr($db);
 $req_mgr = new requirement_mgr($db);
 
-$args = init_args($db);
-$gui = initializeGui($db,$args,$req_spec_mgr,$req_mgr);
-switch ($args->doAction) {
+$args = init_args();
+$gui = initializeGui($db,$args,$_SESSION,$req_spec_mgr,$req_mgr);
+switch($args->doAction)
+{
   case 'uploadFile':
     $dummy = doExecuteImport($gui->fileName,$args,$req_spec_mgr,$req_mgr);
     $gui->items = $dummy->items;        
@@ -132,10 +135,11 @@ function doExecuteImport($fileName,&$argsObj,&$reqSpecMgr,&$reqMgr)
   returns: 
 
 */
-function init_args(&$dbH)
+function init_args()
 {
-  list($args,$env) = initContext();
+  $args = new stdClass();
   $request = strings_stripSlashes($_REQUEST);
+   
    
   $key='actionOnHit';
   $args->$key = isset($_REQUEST[$key]) ? $_REQUEST[$key] : 'update_last_version';
@@ -167,11 +171,8 @@ function init_args(&$dbH)
   }
     
   $args->achecked_req = isset($request['achecked_req']) ? $request['achecked_req'] : null;
-  
-
-  $args->tproject_name = testproject::getName($dbH,$args->tproject_id);
-
-
+  $args->tproject_id = intval($_SESSION['testprojectID']);
+  $args->tproject_name = $_SESSION['testprojectName'];
   $args->user_id = intval(isset($_SESSION['userID']) ? $_SESSION['userID'] : 0);
   $args->scope = isset($_REQUEST['scope']) ? $_REQUEST['scope'] : 'items';
 
@@ -190,7 +191,7 @@ function init_args(&$dbH)
  * create object that will be used by Smarty template
  *
  */
-function initializeGui(&$dbHandler,&$argsObj,&$reqSpecMgr,&$reqMgr)
+function initializeGui(&$dbHandler,&$argsObj,$session,&$reqSpecMgr,&$reqMgr)
 {
   $gui=new stdClass();
   $gui->file_check = array('status_ok' => 1, 'msg' => 'ok');
@@ -206,7 +207,8 @@ function initializeGui(&$dbHandler,&$argsObj,&$reqSpecMgr,&$reqMgr)
   $gui->hitCriteria = $argsObj->hitCriteria;
   $gui->actionOnHit = $argsObj->actionOnHit;  
   
-  switch($gui->scope) {
+  switch($gui->scope)
+  {
     case 'tree':
       $gui->main_descr = sprintf(lang_get('tproject_import_req_spec'),$argsObj->tproject_name);
       $gui->importTypes = $reqSpecMgr->get_import_file_types();
@@ -241,27 +243,20 @@ function initializeGui(&$dbHandler,&$argsObj,&$reqSpecMgr,&$reqMgr)
   $gui->importFileGui->skip_frozen_req_checked = $argsObj->skip_frozen_req ? ' checked="checked" ' : '';
     
     
-  $gui->importFileGui->return_to_url = $_SESSION['basehref'];
-  if( is_null($argsObj->req_spec_id) ) {
-    $gui->importFileGui->return_to_url .= 
-      "lib/project/project_req_spec_mgmt.php?id=$argsObj->tproject_id&" .
-      "tproject_id=$argsObj->tproject_id";
+  $gui->importFileGui->return_to_url=$session['basehref'];
+  if( is_null($argsObj->req_spec_id) )
+  {
+    $gui->importFileGui->return_to_url .= "lib/project/project_req_spec_mgmt.php?id=$argsObj->tproject_id";
   }
-  else {
-    $gui->importFileGui->return_to_url .= 
-      "lib/requirements/reqSpecView.php?" . 
-      "req_spec_id=$argsObj->req_spec_id&" .
-      "tproject_id=$argsObj->tproject_id";
+  else
+  {
+    $gui->importFileGui->return_to_url .= "lib/requirements/reqSpecView.php?req_spec_id=$argsObj->req_spec_id";
   } 
     
-  $gui->actionOptions = 
-    array('update_last_version' => 
-            lang_get('update_last_requirement_version'),
-          'create_new_version' => 
-            lang_get('create_new_requirement_version'));
+  $gui->actionOptions=array('update_last_version' => lang_get('update_last_requirement_version'),
+                            'create_new_version' => lang_get('create_new_requirement_version'));
   
-  $gui->hitOptions = array('docid' => lang_get('same_docid'),
-    'title' => lang_get('same_title'));
+  $gui->hitOptions=array('docid' => lang_get('same_docid'),'title' => lang_get('same_title'));
 
   $gui->duplicate_criteria_verbose = lang_get('duplicate_req_criteria');
 
@@ -287,15 +282,20 @@ function doReqImportFromXML(&$reqSpecMgr,&$reqMgr,&$simpleXMLObj,$importContext,
 {
   $items = array();
   $isReqSpec = property_exists($simpleXMLObj,'req_spec');
-  if ($isReqSpec) {
-    foreach($simpleXMLObj->req_spec as $xkm) {
+  if($isReqSpec)
+  {
+    foreach($simpleXMLObj->req_spec as $xkm)
+    {
       $dummy = $reqSpecMgr->createFromXML($xkm,$importContext->tproject_id,$importContext->req_spec_id,
                         $importContext->user_id,null,$importOptions);
       $items = array_merge($items,$dummy);
     }
-  } else {
+  }   
+  else
+  {
     $loop2do = count($simpleXMLObj->requirement);
-    for($kdx=0; $kdx < $loop2do; $kdx++) {   
+    for($kdx=0; $kdx < $loop2do; $kdx++)
+    {   
       $dummy = $reqMgr->createFromXML($simpleXMLObj->requirement[$kdx],$importContext->tproject_id,
                                         $importContext->req_spec_id,$importContext->user_id,null,$importOptions);
       $items = array_merge($items,$dummy);

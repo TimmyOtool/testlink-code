@@ -4,10 +4,8 @@
  * This script is distributed under the GNU General Public License 2 or later.
  *
  * @filesource  reqSpecView.php
- * @author      Martin Havlat
  *
  * Screen to view existing requirements within a req. specification.
- *
  *
 **/
 require_once("../../config.inc.php");
@@ -19,7 +17,7 @@ require_once("configCheck.php");
 testlinkInitPage($db,false,false,"checkRights");
 
 $templateCfg = templateConfiguration();
-$args = init_args($db);
+$args = init_args();
 $gui = initialize_gui($db,$args);
 
 $smarty = new TLSmarty();
@@ -30,22 +28,16 @@ $smarty->display($templateCfg->template_dir . $templateCfg->default_template);
 /**
  *
  */
-function init_args($dbH)
+function init_args()
 {
-  $iParams = 
-    array("req_spec_id" => array(tlInputParameter::INT_N),
-          "refreshTree" => array(tlInputParameter::INT_N),
-          "tproject_id" => array(tlInputParameter::INT_N),
-          "uploadOPStatusCode" => array(tlInputParameter::STRING_N,0,30));
-
+  $iParams = array("req_spec_id" => array(tlInputParameter::INT_N),
+                   "refreshTree" => array(tlInputParameter::INT_N),
+                   "uploadOPStatusCode" => array(tlInputParameter::STRING_N,0,30) );
   $args = new stdClass();
   R_PARAMS($iParams,$args);
   $args->refreshTree = intval($args->refreshTree);
-  
-  if (0==$args->tproject_id) {
-    throw new Exception("Bad Test Project ID", 1);
-  }
-  $args->tproject_name = testproject::getName($dbH,$args->tproject_id);
+  $args->tproject_id = isset($_SESSION['testprojectID']) ? intval($_SESSION['testprojectID']) : 0;
+  $args->tproject_name = isset($_SESSION['testprojectName']) ? $_SESSION['testprojectName'] : null;
   
   return $args;
 }
@@ -80,7 +72,6 @@ function initialize_gui(&$dbHandler,&$argsObj)
   $gui->name = $gui->req_spec['title'];
   
   
-  $gui->tproject_id = $argsObj->tproject_id;
   $gui->tproject_name = $argsObj->tproject_name;
   $gui->main_descr = lang_get('req_spec_short') . config_get('gui_title_separator_1') . 
                      "[{$gui->req_spec['doc_id']}] :: " .$gui->req_spec['title'];
@@ -101,8 +92,8 @@ function initialize_gui(&$dbHandler,&$argsObj)
                       '&item=reqspec&id=' . urlencode($gui->req_spec['doc_id']);
 
 
-  $gui->fileUploadURL = $_SESSION['basehref'] . $req_spec_mgr->getFileUploadRelativeURL($gui->req_spec_id,$gui->tproject_id);
-  $gui->delAttachmentURL = $_SESSION['basehref'] . $req_spec_mgr->getDeleteAttachmentRelativeURL($gui->req_spec_id,$gui->tproject_id);
+  $gui->fileUploadURL = $_SESSION['basehref'] . $req_spec_mgr->getFileUploadRelativeURL($gui->req_spec_id);
+  $gui->delAttachmentURL = $_SESSION['basehref'] . $req_spec_mgr->getDeleteAttachmentRelativeURL($gui->req_spec_id);
   $gui->fileUploadMsg = '';
   $gui->import_limit = TL_REPOSITORY_MAXFILESIZE;
   
@@ -112,7 +103,8 @@ function initialize_gui(&$dbHandler,&$argsObj)
 
   $gui->btn_import_req_spec = '';
   $gui->reqMgrSystemEnabled = 0;
-  if( !is_null($reqMgrSystem = $commandMgr->getReqMgrSystem()) ) {
+  if( !is_null($reqMgrSystem = $commandMgr->getReqMgrSystem()) )
+  {
     $gui->btn_import_req_spec = sprintf(lang_get('importViaAPI'),$reqMgrSystem['reqmgrsystem_name']);
     $gui->reqMgrSystemEnabled = 1;
   }

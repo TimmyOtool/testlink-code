@@ -55,7 +55,6 @@ if($op->status == 1) {
 }
 
 $gui->keywords = null;
-$gui->activeMenu['projects'] = 'active';
 $gui->submitCode = "";
 if ($tpl != $tplCfg->default_template) {
   // I'm going to return to screen that display all keywords
@@ -120,14 +119,14 @@ function initEnv(&$dbHandler) {
 
   // Check rights before doing anything else
   // Abort if rights are not enough 
-  // Check Only At Test project level
   $args->user = $_SESSION['currentUser'];
-  $environment = array('tproject_id' => $args->tproject_id);
+  $env['tproject_id'] = $args->tproject_id;
+  $env['tplan_id'] = 0;
   
   $check = new stdClass();
   $check->items = array('mgt_modify_key','mgt_view_key');
   $check->mode = 'and';
-  checkAccess($dbHandler,$args->user,$environment,$check);
+  checkAccess($dbHandler,$args->user,$env,$check);
 
   // OK Go ahead
   $args->canManage = true;
@@ -136,8 +135,6 @@ function initEnv(&$dbHandler) {
   $treeMgr = new tree($dbHandler);
   $dummy = $treeMgr->get_node_hierarchy_info($args->tproject_id);
   $args->tproject_name = $dummy['name'];  
-
-  setOpenByAnotherEnv($args);
 
   return $args;
 }
@@ -319,13 +316,10 @@ function getKeywordErrorMessage($code) {
  */
 function initializeGui(&$dbH,&$args) {
 
-  list($add2args,$gui) = initUserEnv($dbH,$args);
+  $gui = new stdClass();
   $gui->openByOther = $args->openByOther;
   $gui->directAccess = $args->directAccess;
   $gui->tcversion_id = $args->tcversion_id;
-  $gui->dialogName = $args->dialogName;
-  $gui->bodyOnLoad = $args->bodyOnLoad;
-  $gui->bodyOnUnload = $args->bodyOnUnload;  
 
   $gui->user_feedback = '';
 

@@ -1,4 +1,5 @@
 <?php
+
 /** 
  * TestLink Open Source Project - http://testlink.sourceforge.net/
  * This script is distributed under the GNU General Public License 2 or later. 
@@ -6,11 +7,13 @@
  * @filesource  reqSpecSearch.php
  * @package   TestLink
  * @author    asimon
- * @copyright   2005-2019
- * @link    http://www.testlink.org
+ * @copyright   2005-2013
+ * @link    http://www.teamst.org/index.php
  *
  * This page presents the search results for requirement specifications.
  *
+ * @internal revisions
+ * @since 1.9.8
  *
  */
 require_once("../../config.inc.php");
@@ -40,8 +43,9 @@ $gui->path_info = null;
 $gui->resultSet = null;
 $gui->tableSet = null;
 
-$itemSet = array();
-if ($args->tprojectID) {
+$itemSet = null;
+if ($args->tprojectID)
+{
   $tables = tlObjectWithDB::getDBTables(array('cfield_design_values', 'nodes_hierarchy', 
                         'req_specs','req_specs_revisions'));
   $filter = null;
@@ -104,12 +108,14 @@ if ($args->tprojectID) {
   }
 
   $sql .= ' ORDER BY id ASC, revision DESC '; 
-  $itemSet = (array)$db->fetchRowsIntoMap($sql,'id',database::CUMULATIVE);
+  $itemSet = $db->fetchRowsIntoMap($sql,'id',database::CUMULATIVE);
+  
 }
 
 $smarty = new TLSmarty();
-$gui->row_qty = count($itemSet);
-if ($gui->row_qty > 0) {
+$gui->row_qty=count($itemSet);
+if($gui->row_qty > 0)
+{
   $gui->resultSet = $itemSet;
   if($gui->row_qty <= $req_cfg->search->max_qty_for_display)
   {
@@ -158,7 +164,8 @@ function buildExtTable($gui, $charset)
   // }
   //
   //
-  if( is_array($gui->resultSet) && count($gui->resultSet) > 0) {
+  if(count($gui->resultSet) > 0) 
+  {
     $matrixData = array();
     $columns = array();
     $columns[] = array('title_key' => 'req_spec', 'type' => 'text', 'groupable' => 'false', 
@@ -179,8 +186,10 @@ function buildExtTable($gui, $charset)
              htmlentities($rfx['name'], ENT_QUOTES, $charset);
       $cm = '<a href="javascript:openReqSpecRevisionWindow(%s)" title="' . $labels['open_on_new_window'] .'" >' . 
           $labels['revision_tag'] . ' </a>'; 
+      // $link = $edit_link;
       $matches = '';
-      foreach ($itemSet as $rx) {
+      foreach($itemSet as $rx) 
+      {
         $matches .= sprintf($cm,$rx['revision_id'],$rx['revision']);
       }
       $rowData[] = $edit_link . $title . ' ' . $matches;
@@ -208,7 +217,7 @@ function buildExtTable($gui, $charset)
  */
 function init_args()
 {
-  list($args,$env) = initContext();
+  $args = new stdClass();
   $_REQUEST = strings_stripSlashes($_REQUEST);
 
   $strnull = array('requirement_document_id', 'name', 'scope', 'coverage',
@@ -227,7 +236,7 @@ function init_args()
   }
 
   $args->userID = isset($_SESSION['userID']) ? $_SESSION['userID'] : 0;
-  $args->tprojectID = $args->tproject_id;
+  $args->tprojectID = isset($_SESSION['testprojectID']) ? $_SESSION['testprojectID'] : 0;
 
   return $args;
 }

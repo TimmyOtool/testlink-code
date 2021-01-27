@@ -19,7 +19,7 @@
 define('TL_SMARTY_VERSION',3);  // @since 1.9.8
 
 /** TestLink Release version (MUST BE changed before the release day) */
-define('TL_VERSION_NUMBER', '2.0.0'); 
+define('TL_VERSION_NUMBER', '1.9.20'); 
 define('TL_VERSION', TL_VERSION_NUMBER . ' ETNIC '); 
 define('TL_FACE_DIR', 'prague'); 
 
@@ -27,8 +27,6 @@ define('TL_FACE_DIR', 'prague');
  *  about necesssary upgrades
  *  if you set this parameter also upgrade 
  *  lib/functions/configCheck.php - checkSchemaVersion() */
-
-// @TODO need to be changed to 2.0.0
 define('TL_LATEST_DB_VERSION', 'DB ' . '1.9.20');
 
 // needed to avoid problems in install scripts that do not include config.inc.php

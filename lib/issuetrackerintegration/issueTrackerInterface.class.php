@@ -97,8 +97,7 @@ abstract class issueTrackerInterface
    *
    * 
    **/
-  function setCfg($xmlString)
-  {
+  function setCfg($xmlString) {
     $msg = null;
     $signature = 'Source:' . __METHOD__;
 
@@ -441,12 +440,8 @@ abstract class issueTrackerInterface
    * @return string returns a complete URL
    *
    **/
-  function getEnterBugURL()
-  {
-    if (property_exists($this->cfg, 'uricreate')) {
-      return $this->cfg->uricreate;
-    }
-    return '';
+  function getEnterBugURL() {
+    return $this->cfg->uricreate;
   }
 
 
@@ -459,8 +454,7 @@ abstract class issueTrackerInterface
    * 
    * @return string 
    **/
-  function buildViewBugURL($issueID)
-  {
+  function buildViewBugURL($issueID) {
     return $this->cfg->uriview . urlencode($issueID);
   }
 

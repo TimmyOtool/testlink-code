@@ -54,7 +54,6 @@ function doAuthorize(&$db,$login,$pwd,$options=null) {
   $loginExpired = false;
   $doLogin = false;
 
-  // if( $doChecks && !is_null($pwd) && !is_null($login)) {
   if( $doChecks && !is_null($login)) {
     $user = new tlUser();
     $user->login = $login;
@@ -285,7 +284,7 @@ function auth_does_password_match(&$db,&$userObj,$cleartext_password)
     break;
   }
 
-  switch ($authMethod) {
+  switch($authMethod) {
     case 'LDAP':
       $msg[ERROR_LDAP_AUTH_FAILED] = lang_get('error_ldap_auth_failed');
       $msg[ERROR_LDAP_SERVER_CONNECT_FAILED] = lang_get('error_ldap_server_connect_failed');

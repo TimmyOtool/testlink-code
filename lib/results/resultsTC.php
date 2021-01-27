@@ -22,7 +22,6 @@ $templateCfg = templateConfiguration();
 
 $smarty = new TLSmarty;
 
-testlinkInitPage($db); 
 list($tplan_mgr,$args) = initArgsForReports($db);
 $metricsMgr = new tlTestPlanMetrics($db);
 $tplan_mgr  = &$metricsMgr; 

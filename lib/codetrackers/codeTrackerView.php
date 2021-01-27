@@ -16,7 +16,18 @@ require_once("common.php");
 testlinkInitPage($db,false,false,"checkRights");
 $templateCfg = templateConfiguration();
 
-$gui = initEnv($db);
+$codeTrackerMgr = new tlCodeTracker($db);
+
+$gui = new stdClass();
+$args = init_args();
+$gui->items = $codeTrackerMgr->getAll(array('output' => 'add_link_count', 'checkEnv' => true));
+$gui->canManage = $args->currentUser->hasRight($db,"codetracker_management");
+$gui->user_feedback = $args->user_feedback;
+
+if($args->id > 0)
+{
+  $gui->items[$args->id]['connection_status'] = $codeTrackerMgr->checkConnection($args->id) ? 'ok' : 'ko'; 
+}
 
 $smarty = new TLSmarty();
 $smarty->assign('gui',$gui);
@@ -25,49 +36,36 @@ $smarty->display($templateCfg->template_dir . $templateCfg->default_template);
 
 
 /**
- *
- */
-function initEnv(&$dbH) {
-
-  $codeTrackerMgr = new tlCodeTracker($dbH);
-
-  list($context,$env) = initContext();  
-  $args = init_args($context);
-
-  list($add2args,$gui) = initUserEnv($dbH,$context);
-  $gui->activeMenu['system'] = 'active';
-  $gui->user_feedback = $args->user_feedback;
-  $gui->items = $codeTrackerMgr->getAll(array('output' => 'add_link_count', 'checkEnv' => true));
-
-  $gui->canManage = $args->currentUser->hasRight($db,"codetracker_management");
-
-  if($args->id > 0) {
-    $gui->items[$args->id]['connection_status'] = $codeTrackerMgr->checkConnection($args->id) ? 'ok' : 'ko'; 
-  }
-  return $gui;
-}
-
-
-/**
  * @return object returns the arguments for the page
  */
-function init_args($context)
+function init_args()
 {
   $args = new stdClass();
-  $args->currentUser = $_SESSION['currentUser']; 
-  $args->user_feedback = array('type' => '', 'message' => '');
-  $args->id = isset($_REQUEST['id']) ? intval($_REQUEST['id']) : 0;
+  $args->tproject_id = isset($_SESSION['testprojectID']) ? intval($_SESSION['testprojectID']) : 0;
 
-  $args->tproject_id = $context->tproject_id;
-  $args->tplan_id = $context->tplan_id;  
+  if( $args->tproject_id == 0 )
+  {
+    $args->tproject_id = isset($_REQUEST['tproject_id']) ? intval($_REQUEST['tproject_id']) : 0;
+  }
+  $args->currentUser = $_SESSION['currentUser']; 
+  
+  $args->user_feedback = array('type' => '', 'message' => '');
+  
+  // only way I've found in order to give feedback for delete
+  // need to undertand if we really need/want to do all this mess
+  // $args->user_feedback = array('type' => '', 'message' => '');
+  // if( isset($_SESSION['codeTrackerView.user_feedback']) )
+  // {
+  //  $args->user_feedback = array('type' => '', 'message' => $_SESSION['codeTrackerView.user_feedback']);
+  //  unset($_SESSION['codeTrackerView.user_feedback']);
+  // }
+
+  $args->id = isset($_REQUEST['id']) ? intval($_REQUEST['id']) : 0;
   return $args;
 }
 
 
-
-/**
- *
- */
-function checkRights(&$db,&$user) {
+function checkRights(&$db,&$user)
+{
   return $user->hasRight($db,"codetracker_view") || $user->hasRight($db,"codetracker_management");
 }

@@ -5,14 +5,13 @@
  *
  * @filesource  reqSearch.php
  * @package     TestLink
- * @copyright   2005-2019, TestLink community 
+ * @copyright   2005-2020, TestLink community 
  * @link        http://www.testlink.org/index.php
  *
  * Search results for requirements.
  *
  *
  */
-
 require_once("../../config.inc.php");
 require_once("common.php");
 require_once("requirements.inc.php");
@@ -38,7 +37,7 @@ $gui->path_info = null;
 $gui->resultSet = null;
 $gui->tableSet = null;
 
-$map = array();
+$map = null;
 $args = init_args($date_format_cfg);
 
 $gui->tcasePrefix = $tproject_mgr->getTestCasePrefix($args->tprojectID);
@@ -50,7 +49,7 @@ if ($args->tprojectID) {
   // key: req id (db id)
   // value: array of versions and revisions
   //
-  $map = (array)$db->fetchRowsIntoMap($sql,'id',database::CUMULATIVE);
+  $map = $db->fetchRowsIntoMap($sql,'id',database::CUMULATIVE);
 
   // dont show requirements from different testprojects than the selected one
   if (count($map)) {
@@ -123,7 +122,7 @@ function buildExtTable($gui, $charset) {
   //
   //
 
-  if( is_array($gui->resultSet) && count($gui->resultSet) > 0) {
+  if(count($gui->resultSet) > 0) {
     $columns = array();
     
     $columns[] = array('title_key' => 'req_spec');
@@ -192,18 +191,24 @@ function buildExtTable($gui, $charset) {
 
  */
 function init_args($dateFormat) {
-  list($args,$env) = initContext();
+  $args = new stdClass();
   $_REQUEST = strings_stripSlashes($_REQUEST);
 
-  $strnull = array('requirement_document_id', 'name','scope', 'reqStatus',
+  $strnull = array('requirement_document_id', 'name','scope', 
+                   'reqStatus',
                    'custom_field_value', 'targetRequirement',
-                   'version', 'tcid', 'reqType', 'relation_type',
-                   'creation_date_from','creation_date_to','log_message',
+                   'creation_date_from','creation_date_to',
+                   'log_message',
                    'modification_date_from','modification_date_to');
   
   foreach($strnull as $keyvar) {
     $args->$keyvar = isset($_REQUEST[$keyvar]) ? trim($_REQUEST[$keyvar]) : null;
     $args->$keyvar = !is_null($args->$keyvar) && strlen($args->$keyvar) > 0 ? trim($args->$keyvar) : null;
+  }
+
+  $intcheck = array('version', 'tcid', 'reqType', 'relation_type');
+  foreach($intcheck as $keyvar) {
+    $args->$keyvar = isset($_REQUEST[$keyvar]) ? intval($_REQUEST[$keyvar]) : null;
   }
 
   $int0 = array('custom_field_id', 'coverage');
@@ -230,7 +235,7 @@ function init_args($dateFormat) {
   }
   
   $args->userID = isset($_SESSION['userID']) ? $_SESSION['userID'] : 0;
-  $args->tprojectID = $args->tproject_id;
+  $args->tprojectID = isset($_SESSION['testprojectID']) ? $_SESSION['testprojectID'] : 0;
 
   return $args;
 }
